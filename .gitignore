@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/           # if you create a folder named .env
+ENV/
+
+# Environment & secrets (CRITICAL)
+.env
+.env.local
+.env.dev
+.env.production
+*.env
+secrets.json
+credentials.json
+*.pem
+*.key
+config/secrets.yml
+
+# IDE & editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+*.log
+logs/
+tmp/
+temp/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Optional: local data / DBs
+*.db
+*.sqlite3
+data/local_*.csv
+data/local_*.json
+
+# Optional: notebooks if you use them
+*.ipynb_checkpoints
