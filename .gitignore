@@ -24,7 +24,7 @@ wheels/
 venv/
 env/
 .venv/
-.env/           # if you create a folder named .env
+.env/          
 ENV/
 
 # Environment & secrets (CRITICAL)
