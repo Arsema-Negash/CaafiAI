@@ -1,163 +1,327 @@
-# CAAFI_AI 🩺🤖
+CAAFI_AI 🩺🤖
 
-**CAAFI_AI** is an AI-powered health consultancy designed to make basic health guidance more accessible to people who may have limited access to nearby health facilities.
+CAAFI_AI is an AI-powered health consultation system designed to make basic health guidance more accessible to people who may have limited access to nearby healthcare facilities.
 
-The system is being designed to allow users to communicate with the AI through **text and voice**, using their **native language and local expressions/slang**.
+The system is being developed to allow users to communicate with an AI health consultant through text messages and voice calls, using their native language and local expressions/slang.
 
-> 🚧 **Status:** Under active development
+CAAFI_AI combines AI reasoning, trusted health knowledge, Retrieval-Augmented Generation (RAG), multilingual processing, speech technologies, and safety-focused health triage into one system.
 
-## 🎯 Goal
+«🚧 Status: Under active development»
 
-CAAFI_AI aims to provide accessible, multilingual health guidance through channels that are practical for users with limited access to healthcare services or digital infrastructure.
+---
 
-## ✨ Planned Features
+🎯 Vision
 
-* 💬 Health consultation through text
-* 📞 Voice-based health consultation
-* 🌍 Support for local/native languages
-* 🗣️ Understanding of local expressions and slang
-* 🧠 AI-powered health information and guidance
-* 📚 Retrieval of information from trusted health resources
-* 🚨 Symptom severity and emergency-risk detection
-* 📱 SMS-based interaction
-* 🔊 Speech-to-text and text-to-speech
-* 🛡️ Safety-focused responses and referral to healthcare professionals when necessary
+CAAFI_AI aims to provide accessible and safer health guidance for people who may have difficulty reaching healthcare facilities.
 
-## 🏗️ Current Architecture
+The goal is not to replace doctors or healthcare professionals, but to provide users with accessible health information, help them understand their symptoms, identify potentially urgent situations, and guide them toward appropriate care.
 
-The project is being developed around a central health consultation API.
+---
 
-```text
-User
- │
- ├── SMS
- │
- ├── Voice Call
- │
- └── Other Interfaces
-        │
-        ▼
-   CAAFI_AI API
-        │
-        ▼
- Language Processing
-        │
-        ▼
- Safety & Triage
-        │
-        ▼
- Health Knowledge / RAG
-        │
-        ▼
- AI Reasoning
-        │
-        ▼
- Safe Health Response
-```
+✨ Core Features
 
-## 🛠️ Technology Stack
+🧠 AI Health Consultation
 
-### Backend
+CAAFI_AI will use an AI model to understand users' health concerns and provide responses grounded in trusted health information.
 
-* Python
-* FastAPI
-* Uvicorn
+📚 Health Knowledge & RAG
 
-### AI / Machine Learning
+The system will use trusted health resources, including relevant Ministry of Health materials, as a knowledge base.
 
-* To be added during development
+Health Documents
+       ↓
+Document Processing
+       ↓
+Chunking & Embeddings
+       ↓
+Vector Database
+       ↓
+Relevant Knowledge Retrieval
+       ↓
+AI Model
+       ↓
+Grounded Response
 
-### Voice & Communication
+🌍 Native Language & Local Slang
 
-* Speech-to-Text — planned
-* Text-to-Speech — planned
-* SMS integration — planned
-* Voice-call integration — planned
+Users should be able to communicate using their native language and common local expressions or slang.
 
-### Knowledge & Data
+The system will work toward:
 
-* Trusted health resources
-* Health documents
-* Retrieval-Augmented Generation (RAG) — planned
+- Language identification
+- Local expression understanding
+- Medical terminology normalization
+- Multilingual responses
 
-## 📁 Project Structure
+📞 Voice Consultation
 
-```text
+Users will eventually be able to call a dedicated number and communicate with CAAFI_AI through voice.
+
+Phone Call
+    ↓
+Speech-to-Text
+    ↓
+CAAFI_AI
+    ↓
+AI Response
+    ↓
+Text-to-Speech
+    ↓
+Voice Response
+
+💬 Text / SMS Consultation
+
+Users will also be able to interact with CAAFI_AI through text-based communication, including SMS.
+
+🚨 Safety & Triage
+
+The system will include a safety layer designed to identify potentially urgent situations and recommend appropriate medical attention.
+
+The AI should not confidently diagnose a patient from symptoms alone.
+
+Instead, it should communicate uncertainty and provide appropriate guidance or referral when necessary.
+
+---
+
+🏗️ System Architecture
+
+The planned architecture is:
+
+                    USER
+                      │
+             ┌────────┴────────┐
+             │                 │
+          📞 Voice           💬 SMS/Text
+             │                 │
+             ▼                 ▼
+        Speech-to-Text      Text Input
+             │                 │
+             └────────┬────────┘
+                      ▼
+              Language Processing
+                      │
+              Native Language
+                 / Local Slang
+                      │
+                      ▼
+              Symptom Understanding
+                      │
+                      ▼
+                Safety / Triage
+                      │
+             ┌────────┴────────┐
+             │                 │
+          Urgent            Non-Urgent
+             │                 │
+             ▼                 ▼
+       Urgent Guidance       RAG
+                               │
+                               ▼
+                     Trusted Health Data
+                               │
+                               ▼
+                         AI / LLM
+                               │
+                               ▼
+                       Safety Validation
+                               │
+                               ▼
+                       Final Response
+                         /          \
+                        ▼            ▼
+                     Text          TTS
+                                     │
+                                     ▼
+                                   Voice
+
+---
+
+🛠️ Technology Stack
+
+Backend
+
+- Python
+- FastAPI
+- Uvicorn
+
+AI
+
+- Large Language Model — planned
+- Retrieval-Augmented Generation (RAG)
+- Embeddings
+- Vector database
+
+Health Knowledge
+
+- Ministry of Health resources
+- Trusted health documents
+- Structured health information
+
+Language & Voice
+
+- Speech-to-Text — planned
+- Text-to-Speech — planned
+- Multilingual processing — planned
+- Local language/slang handling — planned
+
+Communication
+
+- SMS integration — planned
+- Voice-call integration — planned
+
+---
+
+📁 Project Structure
+
+The project will gradually evolve into a modular architecture:
+
 CaafiAI/
 │
 ├── app/
-│   └── main.py
+│   ├── main.py
+│   ├── api/
+│   ├── core/
+│   ├── services/
+│   ├── data/
+│   └── models/
 │
 ├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── knowledge_base/
 │
 ├── tests/
 │
 ├── .gitignore
 ├── README.md
-└── requirements.txt
-```
+├── requirements.txt
+└── run.py
 
-## 🚀 Current API
+The structure will be expanded as each component is implemented.
 
-### Health Check
+---
 
-```http
+🚀 Current Development
+
+The project currently contains the initial FastAPI backend.
+
+Health Check
+
 GET /health
-```
 
-Returns:
+Example response:
 
-```json
 {
   "status": "CAAFI_AI is running"
 }
-```
 
-### Chat
+Initial Consultation API
 
-```http
 POST /chat
-```
 
-Example request:
+The current endpoint is an early API prototype. The actual AI health engine, knowledge retrieval, safety system, multilingual processing, SMS, and voice functionality are still under development.
 
-```json
-{
-  "message": "I have a headache",
-  "language": "en"
-}
-```
+---
 
-> The current `/chat` endpoint is an early development version and does not yet provide real medical reasoning.
+🗺️ Development Roadmap
 
-## ⚠️ Safety
+Phase 1 — Foundation
 
-CAAFI_AI is intended to provide **health information and guidance, not replace qualified healthcare professionals**.
+- [x] Initialize Python environment
+- [x] Set up FastAPI
+- [x] Create health-check endpoint
+- [x] Create initial consultation endpoint
+- [x] Set up GitHub structure
 
-The system will be designed to identify potentially urgent symptoms and encourage users to seek appropriate medical care when necessary.
+Phase 2 — Health Knowledge
 
-Medical information used by the system should come from reliable and appropriately reviewed sources.
+- [ ] Identify trusted health sources
+- [ ] Collect relevant health documents
+- [ ] Process and clean documents
+- [ ] Create knowledge-base pipeline
+- [ ] Generate embeddings
+- [ ] Set up vector database
+- [ ] Implement RAG retrieval
 
-## 🗺️ Development Roadmap
+Phase 3 — AI Health Engine
 
-* [x] Initial FastAPI backend
-* [x] Health-check endpoint
-* [x] Initial `/chat` endpoint
-* [ ] Patient input validation
-* [ ] Symptom and severity classification
-* [ ] Safety and emergency triage
-* [ ] Health knowledge base
-* [ ] RAG pipeline
-* [ ] AI response generation
-* [ ] Multilingual support
-* [ ] Local language/slang handling
-* [ ] SMS integration
-* [ ] Speech-to-text
-* [ ] Text-to-speech
-* [ ] Voice-call integration
-* [ ] End-to-end testing
-* [ ] Deployment
+- [ ] Integrate AI model
+- [ ] Build health consultation pipeline
+- [ ] Ground responses in retrieved health information
+- [ ] Handle uncertainty
+- [ ] Add conversation context
 
-## 📌 Disclaimer
+Phase 4 — Safety & Triage
 
-CAAFI_AI is an educational and research project under development. It is not a substitute for professional medical diagnosis, treatment, or emergency medical services.
+- [ ] Identify emergency warning signs
+- [ ] Build safety layer
+- [ ] Create escalation logic
+- [ ] Test high-risk scenarios
+- [ ] Prevent unsafe or overconfident medical responses
+
+Phase 5 — Language
+
+- [ ] Language identification
+- [ ] Multilingual processing
+- [ ] Local language support
+- [ ] Local slang / expression handling
+- [ ] Multilingual evaluation
+
+Phase 6 — Communication
+
+- [ ] SMS integration
+- [ ] Speech-to-Text
+- [ ] Text-to-Speech
+- [ ] Voice-call integration
+- [ ] Connect communication channels to the AI engine
+
+Phase 7 — Testing & Evaluation
+
+- [ ] Create test cases
+- [ ] Evaluate RAG retrieval
+- [ ] Evaluate language understanding
+- [ ] Evaluate safety/triage
+- [ ] Evaluate response quality
+- [ ] Test voice and SMS flows
+- [ ] Document limitations
+
+Phase 8 — Deployment
+
+- [ ] Configure production environment
+- [ ] Secure API keys and secrets
+- [ ] Deploy backend
+- [ ] Configure communication services
+- [ ] Final end-to-end testing
+
+---
+
+🔐 Safety & Privacy
+
+CAAFI_AI is designed as a health-information and guidance system, not a replacement for qualified healthcare professionals.
+
+The system should:
+
+- Avoid presenting uncertain information as a diagnosis
+- Identify potentially urgent symptoms
+- Encourage professional medical care when appropriate
+- Use trusted health sources for its knowledge base
+- Protect sensitive user information
+- Avoid storing real patient information in the public GitHub repository
+
+Testing should use synthetic or appropriately anonymized data.
+
+---
+
+⚠️ Disclaimer
+
+CAAFI_AI is an educational and research project under development.
+
+It is not a substitute for professional medical diagnosis, treatment, or emergency medical services.
+
+Users experiencing a medical emergency should seek appropriate emergency medical care immediately.
+
+---
+
+📌 Project Goal
+
+«Making accessible, multilingual AI health guidance available through the communication methods people already use.»
