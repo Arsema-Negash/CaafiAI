@@ -68,3 +68,8 @@ data/local_*.json
 
 # Optional: notebooks if you use them
 *.ipynb_checkpoints
+
+# Local health knowledge and generated RAG data
+data/raw/
+data/processed/
+data/knowledge_base/
