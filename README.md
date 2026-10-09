@@ -235,11 +235,11 @@ Phase 1 — Foundation
 
 Phase 2 — Health Knowledge
 
-- [ ] Identify trusted health sources
-- [ ] Collect relevant health documents
-- [ ] Process and clean documents
-- [ ] Create knowledge-base pipeline
-- [ ] Generate embeddings
+- [x] Identify trusted health sources
+- [x] Collect relevant health documents
+- [x] Process and clean documents
+- [x] Create knowledge-base pipeline
+- [x] Generate embeddings
 - [ ] Set up vector database
 - [ ] Implement RAG retrieval
 
