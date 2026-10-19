@@ -1,145 +1,202 @@
 from pathlib import Path
 import re
 
-
 PROCESSED_DATA_DIR = Path("data/processed")
 
+SOURCE_NAME = "Ethiopian Primary Health Care Clinical Guidelines, 2017"
 
-# Main clinical topics from the Ethiopian Primary Health Care Clinical Guidelines
-TOPICS = [
-    "Emergency patient",
-    "Convulsions",
-    "Dizziness",
-    "Headache",
-    "Fever",
-    "Breathing difficulty",
-    "Chest pain",
-    "Cough",
-    "Abdominal pain",
-    "Diarrhoea",
-]
+TOPIC_ALIASES = {
+    "emergency patient": "Emergency patient",
+    "the emergency patient": "Emergency patient",
+    "emergency child": "Emergency patient",
+    "the emergency child": "Emergency patient",
+    "convulsions": "Convulsions",
+    "seizures/convulsions": "Convulsions",
+    "dizziness/vertigo": "Dizziness",
+    "dizziness": "Dizziness",
+    "headache": "Headache",
+    "fever": "Fever",
+    "breathing difficulty": "Breathing difficulty",
+    "cough or difficulty breathing": "Breathing difficulty",
+    "cough and/or breathing problems": "Breathing difficulty",
+    "cough": "Cough",
+    "cough, recurrent": "Cough",
+    "wheeze/tight chest": "Wheeze/tight chest",
+    "chest pain": "Chest pain",
+    "abdominal pain": "Abdominal pain",
+    "abdominal symptoms": "Abdominal pain",
+    "diarrhoea": "Diarrhoea",
+    "breast symptoms": "Breast symptoms",
+}
 
 
 def load_processed_document() -> str:
-    """Load the processed clinical guideline."""
-
-    files = list(PROCESSED_DATA_DIR.glob("*.txt"))
-
-    # Ignore generated chunk files
+    files = sorted(PROCESSED_DATA_DIR.glob("*.txt"))
     files = [file for file in files if file.name != "chunks.txt"]
 
     if not files:
-        raise FileNotFoundError(
-            "No processed clinical guideline found."
-        )
+        raise FileNotFoundError("No processed clinical guideline found.")
 
     return files[0].read_text(encoding="utf-8")
 
 
 def detect_page_marker(line: str):
-    """
-    Detect Adult/Child page markers such as:
-    Adult 17
-    Child 135
-    """
-
-    match = re.fullmatch(r"(Adult|Child)\s+(\d+)", line.strip())
+    match = re.fullmatch(r"(Adult|Child)\s+(\d+)", line.strip(), re.IGNORECASE)
 
     if match:
-        return match.group(1), int(match.group(2))
+        return match.group(1).capitalize(), int(match.group(2))
 
     return None, None
 
 
 def detect_topic(line: str):
-    """Detect a known clinical topic heading."""
+    return TOPIC_ALIASES.get(line.strip().lower())
 
-    cleaned = line.strip()
 
-    for topic in TOPICS:
-        if cleaned.lower() == topic.lower():
-            return topic
+def extract_urgent_child_fever_section(lines: list[str]) -> str | None:
+    """Extract the urgent child-fever section and its management."""
+    start_text = (
+        "Give urgent attention to the child with a fever "
+        "(temperature ≥ 38°C now or in the past 3 days)"
+    )
 
-    return None
+    start = next(
+        (i for i, line in enumerate(lines) if line.startswith(start_text)),
+        None,
+    )
+
+    if start is None:
+        return None
+
+    end = next(
+        (
+            i for i in range(start + 1, len(lines))
+            if re.fullmatch(r"Child\s+136", lines[i], re.IGNORECASE)
+        ),
+        None,
+    )
+
+    if end is None:
+        return None
+
+    return "\n".join(lines[start:end]).strip()
+
 
 
 def create_chunks(text: str, chunk_size: int = 1500) -> list[dict]:
-    """
-    Create chunks while keeping track of population, page, and topic.
-    """
-
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if chunk_size < 1:
+        raise ValueError("chunk_size must be at least 1.")
 
     chunks = []
-
     current_lines = []
     current_length = 0
-
     population = None
     page = None
     topic = None
 
-    for line in lines:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    urgent_child_fever = extract_urgent_child_fever_section(lines)
 
-        detected_population, detected_page = detect_page_marker(line)
+    if urgent_child_fever is None:
+        raise ValueError(
+            "Could not locate the complete urgent child-fever section."
+        )
 
-        if detected_population:
-            population = detected_population
-            page = detected_page
-            continue
+    urgent_start = next(
+        i for i, line in enumerate(lines)
+        if line.startswith(
+            "Give urgent attention to the child with a fever "
+            "(temperature ≥ 38°C now or in the past 3 days)"
+        )
+    )
 
-        detected_topic = detect_topic(line)
+    urgent_end = urgent_start + len(urgent_child_fever.splitlines())
 
-        if detected_topic:
-            topic = detected_topic
+    def save_chunk():
+        nonlocal current_lines, current_length
 
-        if current_length + len(line) <= chunk_size:
-            current_lines.append(line)
-            current_length += len(line)
-
-        else:
-            if current_lines:
-                chunks.append(
-                    {
-                        "id": len(chunks) + 1,
-                        "population": population,
-                        "page": page,
-                        "topic": topic,
-                        "content": "\n".join(current_lines),
-                        "source": (
-                            "Ethiopian Primary Health Care "
-                            "Clinical Guidelines, 2017"
-                        ),
-                    }
-                )
-
-            current_lines = [line]
-            current_length = len(line)
-
-    if current_lines:
-        chunks.append(
-            {
+        if current_lines:
+            chunks.append({
                 "id": len(chunks) + 1,
                 "population": population,
                 "page": page,
                 "topic": topic,
                 "content": "\n".join(current_lines),
-                "source": (
-                    "Ethiopian Primary Health Care "
-                    "Clinical Guidelines, 2017"
-                ),
-            }
-        )
+                "source": SOURCE_NAME,
+            })
 
+        current_lines = []
+        current_length = 0
+
+    i = 0
+
+    while i < len(lines):
+        if i == urgent_start:
+            save_chunk()
+
+            chunks.append({
+                "id": len(chunks) + 1,
+                "population": "Child",
+                "page": 135,
+                "topic": "Fever",
+                "content": urgent_child_fever,
+                "source": SOURCE_NAME,
+            })
+
+            i = urgent_end
+            continue
+
+        line = lines[i]
+
+        detected_population, detected_page = detect_page_marker(line)
+
+        if detected_population:
+            save_chunk()
+            population = detected_population
+            page = detected_page
+            topic = None
+            i += 1
+            continue
+
+        detected_topic = detect_topic(line)
+
+        if detected_topic:
+            save_chunk()
+            topic = detected_topic
+
+        if len(line) > chunk_size:
+            save_chunk()
+            chunks.append({
+                "id": len(chunks) + 1,
+                "population": population,
+                "page": page,
+                "topic": topic,
+                "content": line,
+                "source": SOURCE_NAME,
+            })
+            i += 1
+            continue
+
+        additional_length = len(line) + (1 if current_lines else 0)
+
+        if current_length + additional_length > chunk_size:
+            save_chunk()
+
+        current_lines.append(line)
+        current_length += additional_length
+        i += 1
+
+    save_chunk()
     return chunks
 
 
 if __name__ == "__main__":
     text = load_processed_document()
-
     chunks = create_chunks(text)
 
     print(f"Total chunks created: {len(chunks)}")
+    print(f"Chunks without content: {sum(not c['content'].strip() for c in chunks)}")
+    print(f"Chunks over 1500 characters: {sum(len(c['content']) > 1500 for c in chunks)}")
 
     for chunk in chunks[:5]:
         print("\n--------------------")
@@ -147,5 +204,4 @@ if __name__ == "__main__":
         print(f"Population: {chunk['population']}")
         print(f"Page: {chunk['page']}")
         print(f"Topic: {chunk['topic']}")
-        print(f"Source: {chunk['source']}")
         print(f"Content:\n{chunk['content'][:300]}")

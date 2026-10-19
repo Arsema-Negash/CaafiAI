@@ -73,3 +73,6 @@ data/local_*.json
 data/raw/
 data/processed/
 data/knowledge_base/
+
+# Clinical source documents and generated data
+/data/
