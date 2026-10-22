@@ -1,7 +1,8 @@
 from pathlib import Path
 import re
 
-PROCESSED_DATA_DIR = Path("data/processed")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
 
 SOURCE_NAME = "Ethiopian Primary Health Care Clinical Guidelines, 2017"
 

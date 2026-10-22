@@ -1,327 +1,144 @@
-CAAFI_AI 🩺🤖
+# CAAFI_AI — Clinical Guideline Retrieval MVP
 
-CAAFI_AI is an AI-powered health consultation system designed to make basic health guidance more accessible to people who may have limited access to nearby healthcare facilities.
+CAAFI_AI is an early research prototype intended to make trusted health information easier to access. This repository currently implements a **source-linked clinical-guideline retrieval API** using the Ethiopian Primary Health Care Clinical Guidelines (2017).
 
-The system is being developed to allow users to communicate with an AI health consultant through text messages and voice calls, using their native language and local expressions/slang.
+> **Safety notice:** This is not a medical device, a diagnostic system, or a validated triage tool. It does not assess clinical urgency and must not be used as a substitute for a qualified health professional. The guideline is from 2017; confirm that it remains appropriate before any real-world use. For a possible emergency, seek urgent medical care.
 
-CAAFI_AI combines AI reasoning, trusted health knowledge, Retrieval-Augmented Generation (RAG), multilingual processing, speech technologies, and safety-focused health triage into one system.
+## What currently works
 
-«🚧 Status: Under active development»
+- Extract text from a locally supplied guideline PDF.
+- Chunk the text while retaining population, topic, page, and source metadata.
+- Generate sentence-transformer embeddings and save them to a local JSON index.
+- Retrieve semantically similar passages, with light topic/population ranking adjustments.
+- Serve `GET /health`, `GET /ready`, `POST /chat`, and `POST /api/consultation` through FastAPI.
+- Return retrieved passages and source/page metadata. The API deliberately does **not** invent a diagnosis or claim to assess urgency.
+- Run automated tests for the API contract, retrieval ranking, chunk boundaries, and text cleanup.
 
----
+## Not implemented yet
 
-🎯 Vision
+- LLM-generated answers grounded in the retrieved passages.
+- Clinically validated emergency triage, diagnosis, or treatment recommendations.
+- Amharic and other language generation, language identification, or local-slang normalization.
+- SMS, telephone, speech-to-text, or text-to-speech integration.
+- Production deployment, authentication, monitoring, and clinical evaluation.
 
-CAAFI_AI aims to provide accessible and safer health guidance for people who may have difficulty reaching healthcare facilities.
+These require additional engineering, external service configuration where applicable, and clinical review. Do not describe the current prototype as production-ready.
 
-The goal is not to replace doctors or healthcare professionals, but to provide users with accessible health information, help them understand their symptoms, identify potentially urgent situations, and guide them toward appropriate care.
+## Project layout
 
----
-
-✨ Core Features
-
-🧠 AI Health Consultation
-
-CAAFI_AI will use an AI model to understand users' health concerns and provide responses grounded in trusted health information.
-
-📚 Health Knowledge & RAG
-
-The system will use trusted health resources, including relevant Ministry of Health materials, as a knowledge base.
-
-Health Documents
-       ↓
-Document Processing
-       ↓
-Chunking & Embeddings
-       ↓
-Vector Database
-       ↓
-Relevant Knowledge Retrieval
-       ↓
-AI Model
-       ↓
-Grounded Response
-
-🌍 Native Language & Local Slang
-
-Users should be able to communicate using their native language and common local expressions or slang.
-
-The system will work toward:
-
-- Language identification
-- Local expression understanding
-- Medical terminology normalization
-- Multilingual responses
-
-📞 Voice Consultation
-
-Users will eventually be able to call a dedicated number and communicate with CAAFI_AI through voice.
-
-Phone Call
-    ↓
-Speech-to-Text
-    ↓
-CAAFI_AI
-    ↓
-AI Response
-    ↓
-Text-to-Speech
-    ↓
-Voice Response
-
-💬 Text / SMS Consultation
-
-Users will also be able to interact with CAAFI_AI through text-based communication, including SMS.
-
-🚨 Safety & Triage
-
-The system will include a safety layer designed to identify potentially urgent situations and recommend appropriate medical attention.
-
-The AI should not confidently diagnose a patient from symptoms alone.
-
-Instead, it should communicate uncertainty and provide appropriate guidance or referral when necessary.
-
----
-
-🏗️ System Architecture
-
-The planned architecture is:
-
-                    USER
-                      │
-             ┌────────┴────────┐
-             │                 │
-          📞 Voice           💬 SMS/Text
-             │                 │
-             ▼                 ▼
-        Speech-to-Text      Text Input
-             │                 │
-             └────────┬────────┘
-                      ▼
-              Language Processing
-                      │
-              Native Language
-                 / Local Slang
-                      │
-                      ▼
-              Symptom Understanding
-                      │
-                      ▼
-                Safety / Triage
-                      │
-             ┌────────┴────────┐
-             │                 │
-          Urgent            Non-Urgent
-             │                 │
-             ▼                 ▼
-       Urgent Guidance       RAG
-                               │
-                               ▼
-                     Trusted Health Data
-                               │
-                               ▼
-                         AI / LLM
-                               │
-                               ▼
-                       Safety Validation
-                               │
-                               ▼
-                       Final Response
-                         /          \
-                        ▼            ▼
-                     Text          TTS
-                                     │
-                                     ▼
-                                   Voice
-
----
-
-🛠️ Technology Stack
-
-Backend
-
-- Python
-- FastAPI
-- Uvicorn
-
-AI
-
-- Large Language Model — planned
-- Retrieval-Augmented Generation (RAG)
-- Embeddings
-- Vector database
-
-Health Knowledge
-
-- Ministry of Health resources
-- Trusted health documents
-- Structured health information
-
-Language & Voice
-
-- Speech-to-Text — planned
-- Text-to-Speech — planned
-- Multilingual processing — planned
-- Local language/slang handling — planned
-
-Communication
-
-- SMS integration — planned
-- Voice-call integration — planned
-
----
-
-📁 Project Structure
-
-The project will gradually evolve into a modular architecture:
-
+```text
 CaafiAI/
-│
 ├── app/
-│   ├── main.py
-│   ├── api/
-│   ├── core/
-│   ├── services/
-│   ├── data/
-│   └── models/
-│
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   └── knowledge_base/
-│
-├── tests/
-│
-├── .gitignore
-├── README.md
+│   ├── ai/                 # Embeddings and retrieval
+│   ├── api/                # FastAPI consultation routes
+│   ├── core/               # Consultation orchestration
+│   └── data/               # PDF ingestion and chunking
+├── data/                   # Local-only guideline and generated index (git-ignored)
+├── tests/                  # Automated unit/API tests
 ├── requirements.txt
-└── run.py
+├── requirements-dev.txt
+└── README.md
+```
 
-The structure will be expanded as each component is implemented.
+## Setup on Windows CMD
 
----
+Run commands from the repository root (`CaafiAI`). Python 3.13 is the current development target; use a compatible Python version supported by the installed PyTorch/sentence-transformers packages.
 
-🚀 Current Development
+```cmd
+py -3.13 -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements-dev.txt
+```
 
-The project currently contains the initial FastAPI backend.
+Copy the authorized clinical guideline PDF into `data\raw\`. The PDF is intentionally excluded from Git; do not commit clinical source documents or generated indexes unless you have explicit permission and a reviewed data policy.
 
-Health Check
+Build the local knowledge index:
 
-GET /health
+```cmd
+python -m app.data.ingestion
+python -m app.data.build_embeddings
+```
 
-Example response:
+Run automated tests:
 
+```cmd
+python -m pytest -q
+```
+
+Run the API locally:
+
+```cmd
+python -m uvicorn app.main:app --reload
+```
+
+Open `http://127.0.0.1:8000/docs` to explore the API. Stop the server with `Ctrl+C`.
+
+## Setup on Ubuntu
+
+Install Python, `venv`, and pip first. Then, from the cloned repository:
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements-dev.txt
+```
+
+Copy the authorized PDF to `data/raw/`, then run:
+
+```bash
+python -m app.data.ingestion
+python -m app.data.build_embeddings
+python -m pytest -q
+python -m uvicorn app.main:app --reload
+```
+
+The first embedding build downloads the `all-MiniLM-L6-v2` model if it is not already cached, so internet access is required for the first run unless the model is provided separately. Generated files under root `data/` are local artifacts and are not pushed to GitHub.
+
+## API
+
+### `GET /health`
+
+Confirms the API process is responding. It does not guarantee the embedding model or index is ready.
+
+### `GET /ready`
+
+Reports whether `data/embeddings/clinical_chunks.json` exists.
+
+### `POST /api/consultation` or `POST /chat`
+
+Request:
+
+```json
 {
-  "status": "CAAFI_AI is running"
+  "message": "What guideline information is available about fever in a child?",
+  "language": "en"
 }
+```
 
-Initial Consultation API
+The current MVP supports English only. Other language values are rejected rather than falsely claiming that translation occurred. The response contains a short explanation, `severity: "not_assessed"`, `urgent: null`, source references, retrieved excerpts, similarity scores, and a safety disclaimer. Similarity scores are retrieval signals, not probabilities or clinical confidence.
 
-POST /chat
+## Development checks
 
-The current endpoint is an early API prototype. The actual AI health engine, knowledge retrieval, safety system, multilingual processing, SMS, and voice functionality are still under development.
+- `python -m pytest -q` runs automated unit/API tests without requiring model downloads.
+- `python -m app.ai.test_retrieval` runs the retrieval regression checks against the locally built embedding index and model.
+- Rebuild the index after changing ingestion or chunking logic: `python -m app.data.ingestion` followed by `python -m app.data.build_embeddings`.
 
----
+## Data, privacy, and Git
 
-🗺️ Development Roadmap
+- Never commit `.env` files, API keys, patient information, or private clinical data.
+- Root `data/` is ignored by Git, so the PDF, extracted text, and generated embedding index stay local.
+- Keep an encrypted backup of source documents if you are authorized to retain them.
+- Use synthetic data for development and testing.
 
-Phase 1 — Foundation
+## Roadmap
 
-- [x] Initialize Python environment
-- [x] Set up FastAPI
-- [x] Create health-check endpoint
-- [x] Create initial consultation endpoint
-- [x] Set up GitHub structure
-
-Phase 2 — Health Knowledge
-
-- [x] Identify trusted health sources
-- [x] Collect relevant health documents
-- [x] Process and clean documents
-- [x] Create knowledge-base pipeline
-- [x] Generate embeddings
-- [ ] Set up vector database
-- [ ] Implement RAG retrieval
-
-Phase 3 — AI Health Engine
-
-- [ ] Integrate AI model
-- [ ] Build health consultation pipeline
-- [ ] Ground responses in retrieved health information
-- [ ] Handle uncertainty
-- [ ] Add conversation context
-
-Phase 4 — Safety & Triage
-
-- [ ] Identify emergency warning signs
-- [ ] Build safety layer
-- [ ] Create escalation logic
-- [ ] Test high-risk scenarios
-- [ ] Prevent unsafe or overconfident medical responses
-
-Phase 5 — Language
-
-- [ ] Language identification
-- [ ] Multilingual processing
-- [ ] Local language support
-- [ ] Local slang / expression handling
-- [ ] Multilingual evaluation
-
-Phase 6 — Communication
-
-- [ ] SMS integration
-- [ ] Speech-to-Text
-- [ ] Text-to-Speech
-- [ ] Voice-call integration
-- [ ] Connect communication channels to the AI engine
-
-Phase 7 — Testing & Evaluation
-
-- [ ] Create test cases
-- [ ] Evaluate RAG retrieval
-- [ ] Evaluate language understanding
-- [ ] Evaluate safety/triage
-- [ ] Evaluate response quality
-- [ ] Test voice and SMS flows
-- [ ] Document limitations
-
-Phase 8 — Deployment
-
-- [ ] Configure production environment
-- [ ] Secure API keys and secrets
-- [ ] Deploy backend
-- [ ] Configure communication services
-- [ ] Final end-to-end testing
-
----
-
-🔐 Safety & Privacy
-
-CAAFI_AI is designed as a health-information and guidance system, not a replacement for qualified healthcare professionals.
-
-The system should:
-
-- Avoid presenting uncertain information as a diagnosis
-- Identify potentially urgent symptoms
-- Encourage professional medical care when appropriate
-- Use trusted health sources for its knowledge base
-- Protect sensitive user information
-- Avoid storing real patient information in the public GitHub repository
-
-Testing should use synthetic or appropriately anonymized data.
-
----
-
-⚠️ Disclaimer
-
-CAAFI_AI is an educational and research project under development.
-
-It is not a substitute for professional medical diagnosis, treatment, or emergency medical services.
-
-Users experiencing a medical emergency should seek appropriate emergency medical care immediately.
-
----
-
-📌 Project Goal
-
-«Making accessible, multilingual AI health guidance available through the communication methods people already use.»
+1. Complete retrieval evaluation with a reviewed set of representative questions.
+2. Add a configurable LLM adapter that answers only from retrieved evidence and returns citations; test it with a supplied provider/model configuration.
+3. Design and clinically review a separate emergency escalation layer before making any triage claims.
+4. Add supported-language workflows and evaluate them with fluent speakers and healthcare professionals.
+5. Add SMS/voice providers only after credentials, consent, privacy, and operational requirements are defined.
+6. Add deployment, security, observability, and end-to-end evaluation before any real-world pilot.

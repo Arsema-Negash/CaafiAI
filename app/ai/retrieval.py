@@ -3,9 +3,10 @@ from pathlib import Path
 
 import numpy as np
 
-from app.ai.embeddings import model
+from app.ai.embeddings import get_model
 
-EMBEDDINGS_FILE = Path("data/embeddings/clinical_chunks.json")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+EMBEDDINGS_FILE = PROJECT_ROOT / "data" / "embeddings" / "clinical_chunks.json"
 
 
 def load_chunks() -> list[dict]:
@@ -63,7 +64,7 @@ def search_clinical_guidelines(
         if any(term in query_lower for term in terms)
     }
 
-    query_embedding = model.encode(
+    query_embedding = get_model().encode(
         query,
         normalize_embeddings=True,
     )

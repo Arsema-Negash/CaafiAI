@@ -1,37 +1,33 @@
+"""CAAFI_AI FastAPI application entry point."""
 from fastapi import FastAPI
-from pydantic import BaseModel
 
-from app.health import generate_health_response
+from app.api.consultation import router as consultation_router
 
+app = FastAPI(
+    title="CAAFI_AI",
+    description=(
+        "Research prototype for retrieving Ethiopian clinical-guideline evidence. "
+        "It is not a diagnostic or validated triage system."
+    ),
+    version="0.1.0",
+)
 
-app = FastAPI(title="CAAFI_AI")
-
-
-class ChatRequest(BaseModel):
-    message: str
-    language: str = "en"
-
-
-class ChatResponse(BaseModel):
-    response: str
-    language: str
-    severity: str
-    urgent: bool
+app.include_router(consultation_router)
 
 
-@app.get("/health")
-def health_check():
-    return {"status": "CAAFI_AI is running"}
+@app.get("/health", tags=["system"])
+def health_check() -> dict[str, str]:
+    """Indicate that the API process is responding (not model readiness)."""
+    return {"status": "ok", "service": "CAAFI_AI"}
 
 
-@app.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
+@app.get("/ready", tags=["system"])
+def readiness_check() -> dict[str, str | bool]:
+    """Check that the generated guideline index exists on disk."""
+    from app.ai.retrieval import EMBEDDINGS_FILE
 
-    result = generate_health_response(request.message)
-
-    return ChatResponse(
-        response=result["response"],
-        language=request.language,
-        severity=result["severity"],
-        urgent=result["urgent"],
-    )
+    ready = EMBEDDINGS_FILE.is_file()
+    return {
+        "ready": ready,
+        "clinical_index": "available" if ready else "missing",
+    }

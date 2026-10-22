@@ -1,12 +1,10 @@
-from pathlib import Path
+"""Unit tests for PDF text cleanup (no filesystem/network side effects)."""
+from app.data.ingestion import clean_text
 
-from app.data.ingestion import process_pdf
+
+def test_clean_text_repairs_common_encoding_artifacts():
+    assert clean_text("Itâ€™s â€œimportantâ€ Â test") == "It’s “important”  test"
 
 
-pdf_path = Path(
-    "data/raw/Ethiopian Primary care clinical guideline 2017 - DIGITAL final draft (4).pdf"
-)
-
-output_path = process_pdf(pdf_path)
-
-print(f"Processed document saved to: {output_path}")
+def test_clean_text_trims_and_removes_blank_lines():
+    assert clean_text("  first line  \n\n   second line \n") == "first line\nsecond line"

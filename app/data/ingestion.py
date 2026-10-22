@@ -2,8 +2,9 @@ from pathlib import Path
 from pypdf import PdfReader
 
 
-RAW_DATA_DIR = Path("data/raw")
-PROCESSED_DATA_DIR = Path("data/processed")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw"
+PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
 
 
 def extract_text_from_pdf(pdf_path: Path) -> str:
@@ -78,3 +79,13 @@ def process_pdf(pdf_path: Path) -> Path:
         cleaned_text,
         output_filename
     )
+
+if __name__ == "__main__":
+    pdf_files = sorted(RAW_DATA_DIR.glob("*.pdf"))
+    if not pdf_files:
+        raise FileNotFoundError(
+            f"No PDF files found in {RAW_DATA_DIR}. Copy the authorized clinical guideline PDF there first."
+        )
+    for pdf_file in pdf_files:
+        output_file = process_pdf(pdf_file)
+        print(f"Processed {pdf_file.name} -> {output_file}")

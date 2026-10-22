@@ -2,10 +2,11 @@ from pathlib import Path
 import json
 
 from app.data.chunker import load_processed_document, create_chunks
-from app.ai.embeddings import model
+from app.ai.embeddings import get_model
 
 
-EMBEDDINGS_DIR = Path("data/embeddings")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "embeddings"
 OUTPUT_FILE = EMBEDDINGS_DIR / "clinical_chunks.json"
 
 
@@ -19,9 +20,10 @@ def build_embeddings():
 
     print(f"Creating embeddings for {len(chunks)} chunks...")
 
+    model = get_model()
     for i, chunk in enumerate(chunks, start=1):
         chunk["embedding"] = model.encode(
-            chunk["content"]
+            chunk["content"], normalize_embeddings=True
         ).tolist()
 
         if i % 25 == 0:
