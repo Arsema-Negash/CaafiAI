@@ -218,7 +218,9 @@ A structured **pending clinician review** checklist lives at `evaluation/CLINICA
 ## Roadmap
 
 1. Qualified clinician review of guideline currency (post-2017 updates), case evaluations, and expected label mappings.
-2. Add a grounded LLM answer generator that strictly cites retrieved passages without fabricating diagnoses or treatment dosages.
-3. Design and clinically evaluate an independent emergency escalation and triage layer.
-4. Add multilingual support (Amharic, Afaan Oromoo, Somali) with fluent clinical translation and validation.
-5. Add SMS and telephone channels with appropriate authentication, operational safeguards, and patient privacy controls.
+2. Generative LLM answers are still **not** implemented. Responses already quote retrieved passages only (`app/core/ai_engine.py`). A rewriting model must wait until retrieval is clinically reviewed.
+3. Design and clinically evaluate an independent emergency escalation and triage layer. Not started; do not invent triage rules in code.
+4. Add multilingual support (Amharic, Afaan Oromoo, Somali) with fluent clinical translation and validation. Not started.
+5. Add SMS and telephone channels with appropriate authentication, operational safeguards, and patient privacy controls. Not started.
+
+See [docs/WHAT_IS_LEFT.md](docs/WHAT_IS_LEFT.md) for the exact blockers and the Windows commands to push.
