@@ -13,14 +13,14 @@ CAAFI_AI is an early research prototype intended to make trusted health informat
 - Fast, local-cached SentenceTransformer loading with offline resilience.
 - Retrieve semantically similar passages, with light topic/population ranking adjustments.
 - Serve `GET /`, `GET /health`, `GET /ready`, `POST /chat`, and `POST /api/consultation` through FastAPI.
-- Return retrieved passages and source/page metadata. The API deliberately does **not** invent a diagnosis or claim to assess urgency.
+- Return retrieved passages and source/page metadata, with the response body quoting those passages only. The API deliberately does **not** invent a diagnosis or claim to assess urgency.
 - Safe structured logging without logging patient query contents or sensitive clinical inputs.
 - Run automated tests (`pytest`) for the API contract, retrieval ranking, chunk boundaries, text cleanup, and privacy logging.
 - Evaluate retrieval quality against a draft 15-case test set (`python -m app.ai.evaluate_retrieval`).
 
 ## Not implemented yet
 
-- LLM-generated answers grounded in the retrieved passages.
+- A generative LLM that rewrites answers (the API only quotes retrieved passages; it does not generate new clinical prose).
 - Clinically validated emergency triage, diagnosis, or treatment recommendations.
 - Amharic and other language generation, language identification, or local-slang normalization.
 - SMS, telephone, speech-to-text, or text-to-speech integration.

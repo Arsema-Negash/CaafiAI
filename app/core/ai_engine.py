@@ -2,6 +2,7 @@
 
 This module intentionally does not claim to diagnose or perform clinical triage.
 It returns retrieved guideline passages with source metadata for human review.
+Answers are extractive: every quoted sentence comes from a retrieved chunk.
 """
 from typing import Any
 
@@ -15,6 +16,45 @@ DISCLAIMER = (
     "guideline excerpts with a qualified health professional. If someone may "
     "be in immediate danger, seek urgent medical care."
 )
+
+EXCERPT_CHAR_LIMIT = 480
+
+
+def _excerpt(content: str) -> str:
+    """Return a single-line excerpt that is a prefix of the source chunk only."""
+    collapsed = " ".join(content.split())
+    if len(collapsed) <= EXCERPT_CHAR_LIMIT:
+        return collapsed
+    return collapsed[: EXCERPT_CHAR_LIMIT].rstrip() + "…"
+
+
+def compose_extractive_response(sources: list[dict[str, Any]]) -> str:
+    """Quote retrieved passages. Do not add clinical claims that are not in the sources."""
+    if not sources:
+        return (
+            "I could not retrieve a relevant passage from the currently loaded "
+            "clinical guideline. Do not treat this as evidence that no risk exists."
+        )
+
+    lines = [
+        (
+            f"I retrieved {len(sources)} potentially relevant passage(s) from "
+            "the clinical guideline. These are evidence excerpts, not a diagnosis "
+            "or a validated triage decision. Review the source and page references "
+            "below with a qualified health professional."
+        ),
+        "",
+        "Quoted excerpts (text is copied from retrieved chunks only):",
+    ]
+    for index, source in enumerate(sources, start=1):
+        topic = source.get("topic") or "Unknown topic"
+        population = source.get("population") or "Unspecified population"
+        page = source.get("page")
+        page_label = "page unknown" if page in (None, "") else f"page {page}"
+        lines.append(
+            f"{index}. [{topic} | {population} | {page_label}] {_excerpt(source.get('content') or '')}"
+        )
+    return "\n".join(lines)
 
 
 def generate_health_response(message: str, language: str = "en") -> dict[str, Any]:
@@ -37,21 +77,8 @@ def generate_health_response(message: str, language: str = "en") -> dict[str, An
         for result in results
     ]
 
-    if not sources:
-        response = (
-            "I could not retrieve a relevant passage from the currently loaded "
-            "clinical guideline. Do not treat this as evidence that no risk exists."
-        )
-    else:
-        response = (
-            f"I retrieved {len(sources)} potentially relevant passage(s) from "
-            "the clinical guideline. These are evidence excerpts, not a diagnosis "
-            "or a validated triage decision. Review the source and page references "
-            "below with a qualified health professional."
-        )
-
     return {
-        "response": response,
+        "response": compose_extractive_response(sources),
         "language": language,
         "severity": "not_assessed",
         "urgent": None,
