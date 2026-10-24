@@ -1,19 +1,16 @@
+"""Build local clinical guideline embeddings from processed chunks."""
 from pathlib import Path
 import json
 
 from app.data.chunker import load_processed_document, create_chunks
 from app.ai.embeddings import get_model
+from app.core.config import settings
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "embeddings"
-OUTPUT_FILE = EMBEDDINGS_DIR / "clinical_chunks.json"
-
-
-def build_embeddings():
-    """Create embeddings for all clinical guideline chunks."""
-
-    EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
+def build_embeddings() -> None:
+    """Create embeddings for all clinical guideline chunks and write the index."""
+    output_file = settings.embeddings_path
+    output_file.parent.mkdir(parents=True, exist_ok=True)
 
     text = load_processed_document()
     chunks = create_chunks(text)
@@ -31,12 +28,12 @@ def build_embeddings():
     for chunk, emb in zip(chunks, embeddings):
         chunk["embedding"] = emb.tolist()
 
-    OUTPUT_FILE.write_text(
+    output_file.write_text(
         json.dumps(chunks, ensure_ascii=False),
         encoding="utf-8",
     )
 
-    print(f"Saved embeddings to: {OUTPUT_FILE}")
+    print(f"Saved embeddings to: {output_file}")
 
 
 if __name__ == "__main__":

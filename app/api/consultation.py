@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from app.core.ai_engine import generate_health_response
+from app.core.config import settings
 
 logger = logging.getLogger("caafi_ai.consultation")
 
@@ -18,7 +19,7 @@ router = APIRouter(tags=["consultation"])
 class ConsultationRequest(BaseModel):
     message: str = Field(
         min_length=1,
-        max_length=2000,
+        max_length=settings.max_message_length,
         description="Clinical inquiry or symptom description to retrieve evidence for",
     )
     language: str = Field(

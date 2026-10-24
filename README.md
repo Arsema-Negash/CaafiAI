@@ -52,7 +52,7 @@ CaafiAI/
 
 ## Configuration & Environment Variables
 
-Settings are centrally managed in `app/core/config.py` with environment variable overrides:
+Settings are centrally managed in `app/core/config.py` with environment variable overrides. Copy `.env.example` to `.env` for local overrides (never commit `.env`).
 
 | Variable | Default | Description |
 |---|---|---|
@@ -201,6 +201,9 @@ python -m app.ai.evaluate_retrieval --output reports/retrieval-evaluation.json
 - `child_emergency`: Evaluates against `Emergency patient` on page 128 ("The emergency child"), disambiguated from `Injured child`.
 - `child_wheeze`: The chunker added `Wheeze/tight chest` aliases, but the embeddings index had not been rebuilt since that change. Rebuilding the 454-chunk embeddings with batch encoding resolved the missing topic labels on pages 142–143.
 - Population inference was improved to remain neutral (`None`) when both "adult" and "child" are present in a single query, preventing unfair penalties.
+
+
+A structured **pending clinician review** checklist lives at `evaluation/CLINICAL_REVIEW_CHECKLIST.md`. It must remain unsigned until a qualified reviewer completes it.
 
 ### Clinical Limitation Notice
 > **Important:** The evaluation cases are **draft engineering checks, not a clinically validated gold set**. The reported hit rates measure metadata-label agreement only, **not clinical relevance, answer correctness, or clinical safety**. A qualified clinical team must review all guideline sections, test cases, and expected behaviors before any patient-facing use.

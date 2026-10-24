@@ -24,7 +24,7 @@ wheels/
 venv/
 env/
 .venv/
-.env/          
+.env/
 ENV/
 
 # Environment & secrets (CRITICAL)
@@ -69,10 +69,14 @@ data/local_*.json
 # Optional: notebooks if you use them
 *.ipynb_checkpoints
 
-# Local health knowledge and generated RAG data
+# Clinical source documents and generated RAG artifacts (do not commit)
 data/raw/
 data/processed/
 data/knowledge_base/
+data/embeddings/
 
-# Clinical source documents and generated data
-/data/
+# Model caches and large binaries
+.cache/
+*.pt
+*.bin
+*.onnx

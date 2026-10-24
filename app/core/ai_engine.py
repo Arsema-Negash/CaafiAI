@@ -6,6 +6,7 @@ It returns retrieved guideline passages with source metadata for human review.
 from typing import Any
 
 from app.ai.retrieval import search_clinical_guidelines
+from app.core.config import settings
 
 
 DISCLAIMER = (
@@ -22,7 +23,7 @@ def generate_health_response(message: str, language: str = "en") -> dict[str, An
     if not query:
         raise ValueError("Message cannot be empty.")
 
-    results = search_clinical_guidelines(query, top_k=3)
+    results = search_clinical_guidelines(query, top_k=settings.default_top_k)
     sources = [
         {
             "id": result.get("id"),
