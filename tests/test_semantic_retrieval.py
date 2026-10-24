@@ -46,3 +46,143 @@ def test_retrieval_rejects_blank_query():
 def test_retrieval_rejects_nonpositive_top_k():
     with pytest.raises(ValueError, match="at least 1"):
         retrieval.search_clinical_guidelines("fever", top_k=0)
+
+
+def _write_index(tmp_path, monkeypatch, rows):
+    index = tmp_path / "chunks.json"
+    index.write_text(json.dumps(rows), encoding="utf-8")
+    monkeypatch.setattr(retrieval, "EMBEDDINGS_FILE", index)
+    monkeypatch.setattr(retrieval, "get_model", lambda: FakeModel())
+
+
+def test_general_emergency_query_prefers_emergency_topic_over_injured_child(
+    tmp_path, monkeypatch
+):
+    _write_index(
+        tmp_path,
+        monkeypatch,
+        [
+            {
+                "id": 1,
+                "topic": "Injured child",
+                "population": "Child",
+                "page": 133,
+                "source": "Test guideline",
+                "content": "Give urgent attention to the injured child with any of:",
+                "embedding": [0.41, 0.912],
+            },
+            {
+                "id": 2,
+                "topic": "Emergency patient",
+                "population": "Child",
+                "page": 128,
+                "source": "Test guideline",
+                "content": "Give urgent attention to the emergency child",
+                "embedding": [0.40, 0.9165],
+            },
+        ],
+    )
+
+    results = retrieval.search_clinical_guidelines(
+        "What are the general emergency danger signs for a child?",
+        top_k=2,
+    )
+
+    assert results[0]["id"] == 2
+    assert results[0]["topic"] == "Emergency patient"
+
+
+def test_wheeze_query_prefers_wheeze_over_breathing_difficulty(tmp_path, monkeypatch):
+    _write_index(
+        tmp_path,
+        monkeypatch,
+        [
+            {
+                "id": 1,
+                "topic": "Breathing difficulty",
+                "population": "Child",
+                "page": 141,
+                "source": "Test guideline",
+                "content": "Cough and/or breathing problems. If wheeze see next page.",
+                "embedding": [0.52, 0.854],
+            },
+            {
+                "id": 2,
+                "topic": "Wheeze/tight chest",
+                "population": "Child",
+                "page": 142,
+                "source": "Test guideline",
+                "content": "Give urgent attention to the child with wheeze and any of:",
+                "embedding": [0.50, 0.866],
+            },
+        ],
+    )
+
+    results = retrieval.search_clinical_guidelines(
+        "What guidance is relevant when a child has wheezing or a tight chest?",
+        top_k=2,
+    )
+
+    assert results[0]["topic"] == "Wheeze/tight chest"
+
+
+def test_chunks_with_missing_metadata_can_still_rank_by_similarity(tmp_path, monkeypatch):
+    _write_index(
+        tmp_path,
+        monkeypatch,
+        [
+            {
+                "id": 1,
+                "topic": None,
+                "population": None,
+                "page": None,
+                "source": "Test guideline",
+                "content": "Unlabeled preface",
+                "embedding": [1.0, 0.0],
+            },
+            {
+                "id": 2,
+                "topic": "Fever",
+                "population": "Child",
+                "page": 135,
+                "source": "Test guideline",
+                "content": "Child fever",
+                "embedding": [0.0, 1.0],
+            },
+        ],
+    )
+
+    results = retrieval.search_clinical_guidelines("unlabeled preface text", top_k=2)
+    assert results[0]["id"] == 1
+    assert results[0]["topic"] is None
+
+
+def test_zero_norm_embeddings_are_skipped(tmp_path, monkeypatch):
+    _write_index(
+        tmp_path,
+        monkeypatch,
+        [
+            {
+                "id": 1,
+                "topic": "Fever",
+                "population": "Child",
+                "page": 135,
+                "source": "Test guideline",
+                "content": "bad vector",
+                "embedding": [0.0, 0.0],
+            },
+            {
+                "id": 2,
+                "topic": "Fever",
+                "population": "Child",
+                "page": 135,
+                "source": "Test guideline",
+                "content": "Child fever guidance",
+                "embedding": [1.0, 0.0],
+            },
+        ],
+    )
+
+    results = retrieval.search_clinical_guidelines("fever in a child", top_k=5)
+    assert [item["id"] for item in results] == [2]
+

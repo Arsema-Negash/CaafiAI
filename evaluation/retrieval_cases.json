@@ -1,0 +1,24 @@
+{
+  "dataset_name": "CAAFI_AI retrieval evaluation draft",
+  "dataset_version": 1,
+  "status": "draft_needs_clinical_review",
+  "source_guideline": "Ethiopian Primary Health Care Clinical Guidelines, 2017",
+  "safety_note": "This is an engineering evaluation draft, not a clinically validated gold set. Expected topic and population labels are provisional metadata targets. A qualified clinical reviewer must verify each query and expected label against an authorized, current guideline before results are used to make clinical claims.",
+  "cases": [
+    {"id": "child_breathing_danger_signs", "query": "What danger signs should be assessed in a child with difficulty breathing?", "expected_topic": "Breathing difficulty", "expected_population": "Child"},
+    {"id": "adult_breathing_emergency", "query": "What emergency signs matter for an adult with shortness of breath?", "expected_topic": "Breathing difficulty", "expected_population": "Adult"},
+    {"id": "child_cough_breathing", "query": "A child has cough and breathing problems. Which guideline section is relevant?", "expected_topic": "Breathing difficulty", "expected_population": "Child"},
+    {"id": "adult_cough", "query": "What does the guideline cover for an adult with a cough?", "expected_topic": "Breathing difficulty", "expected_population": "Adult", "label_note": "The 2017 adult body heading is 'Cough or difficulty breathing' on page 29. The chunker maps that heading to Breathing difficulty. The table of contents lists Cough 29 and Breathing difficulty 29 as the same page; there is no separate adult Cough body section."},
+    {"id": "child_fever", "query": "What guideline information applies to a child with fever?", "expected_topic": "Fever", "expected_population": "Child"},
+    {"id": "adult_fever", "query": "What should be reviewed for an adult with fever and a high temperature?", "expected_topic": "Fever", "expected_population": "Adult"},
+    {"id": "child_convulsions", "query": "What guideline section covers seizures or convulsions in a child?", "expected_topic": "Convulsions", "expected_population": "Child"},
+    {"id": "adult_chest_pain", "query": "Which guideline section is relevant to chest pain in an adult?", "expected_topic": "Chest pain", "expected_population": "Adult"},
+    {"id": "child_wheeze", "query": "What guidance is relevant when a child has wheezing or a tight chest?", "expected_topic": "Wheeze/tight chest", "expected_population": "Child"},
+    {"id": "adult_dizziness", "query": "What section covers dizziness or vertigo in adults?", "expected_topic": "Dizziness", "expected_population": "Adult"},
+    {"id": "adult_headache", "query": "Which guideline topic covers headache in an adult?", "expected_topic": "Headache", "expected_population": "Adult"},
+    {"id": "child_abdominal_pain", "query": "What guidance is relevant to abdominal pain in a child?", "expected_topic": "Abdominal pain", "expected_population": "Child"},
+    {"id": "adult_diarrhoea", "query": "Which guideline section covers diarrhoea in an adult?", "expected_topic": "Diarrhoea", "expected_population": "Adult"},
+    {"id": "child_emergency", "query": "What are the general emergency danger signs for a child?", "expected_topic": "Emergency patient", "expected_population": "Child"},
+    {"id": "adult_emergency", "query": "What are the general emergency danger signs for an adult patient?", "expected_topic": "Emergency patient", "expected_population": "Adult"}
+  ]
+}

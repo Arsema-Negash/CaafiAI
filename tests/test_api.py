@@ -1,9 +1,15 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.core import ai_engine
 
-client = TestClient(app)
+
+@pytest.fixture
+def client():
+    # Use the context-managed client so Starlette can close the httpx transport.
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 FAKE_RESULTS = [
@@ -20,19 +26,19 @@ FAKE_RESULTS = [
 ]
 
 
-def test_health_endpoint():
+def test_health_endpoint(client):
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
 
-def test_readiness_endpoint_has_boolean():
+def test_readiness_endpoint_has_boolean(client):
     response = client.get("/ready")
     assert response.status_code == 200
     assert isinstance(response.json()["ready"], bool)
 
 
-def test_consultation_returns_source_linked_evidence(monkeypatch):
+def test_consultation_returns_source_linked_evidence(client, monkeypatch):
     monkeypatch.setattr(ai_engine, "search_clinical_guidelines", lambda query, top_k: FAKE_RESULTS)
 
     response = client.post(
@@ -50,12 +56,12 @@ def test_consultation_returns_source_linked_evidence(monkeypatch):
     assert body["disclaimer"]
 
 
-def test_blank_message_is_rejected():
+def test_blank_message_is_rejected(client):
     response = client.post("/chat", json={"message": "   "})
     assert response.status_code == 422
 
 
-def test_missing_index_returns_service_unavailable(monkeypatch):
+def test_missing_index_returns_service_unavailable(client, monkeypatch):
     def missing_index(query, top_k):
         raise FileNotFoundError("missing")
 
@@ -64,7 +70,7 @@ def test_missing_index_returns_service_unavailable(monkeypatch):
     assert response.status_code == 503
 
 
-def test_non_english_language_is_rejected_for_now():
+def test_non_english_language_is_rejected_for_now(client):
     response = client.post(
         "/chat",
         json={"message": "Question about fever", "language": "am"},
@@ -72,7 +78,7 @@ def test_non_english_language_is_rejected_for_now():
     assert response.status_code == 422
 
 
-def test_chat_endpoint_returns_evidence_and_does_not_assess_urgency(monkeypatch):
+def test_chat_endpoint_returns_evidence_and_does_not_assess_urgency(client, monkeypatch):
     monkeypatch.setattr(
         ai_engine,
         "search_clinical_guidelines",

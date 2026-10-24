@@ -20,6 +20,107 @@ def load_chunks() -> list[dict]:
     return json.loads(EMBEDDINGS_FILE.read_text(encoding="utf-8"))
 
 
+SYMPTOM_TOPIC_TERMS = {
+    "Breathing difficulty": (
+        "breathing difficulty",
+        "difficulty breathing",
+        "breathing problems",
+        "shortness of breath",
+        "cough or difficulty",
+        "cough and/or breathing",
+        "cough",
+    ),
+    "Wheeze/tight chest": (
+        "wheez",
+        "tight chest",
+    ),
+    "Fever": ("fever", "febrile", "temperature"),
+    "Chest pain": ("chest pain",),
+    "Convulsions": ("convulsion", "seizure"),
+    "Dizziness": ("dizziness", "vertigo"),
+    "Headache": ("headache",),
+    "Abdominal pain": ("abdominal pain", "abdominal symptom"),
+    "Diarrhoea": ("diarrhoea", "diarrhea"),
+}
+
+URGENCY_QUERY_TERMS = (
+    "danger sign",
+    "danger signs",
+    "emergency",
+    "urgent",
+    "urgently",
+)
+
+SYMPTOM_URGENT_HEADINGS = (
+    "give urgent attention to the patient with",
+    "give urgent attention to the child with",
+    "give urgent attention to the patient who",
+    "give urgent attention to the child who",
+)
+
+
+def infer_population_hint(query_lower: str) -> str | None:
+    """Return Adult/Child only when the query names that population."""
+    if "child" in query_lower or "children" in query_lower:
+        return "Child"
+    if "adult" in query_lower:
+        return "Adult"
+    return None
+
+
+def infer_relevant_topics(query_lower: str) -> set[str]:
+    """Map query phrases onto guideline symptom topics, not evaluation case IDs."""
+    return {
+        topic
+        for topic, terms in SYMPTOM_TOPIC_TERMS.items()
+        if any(term in query_lower for term in terms)
+    }
+
+
+def query_asks_about_urgency(query_lower: str) -> bool:
+    return any(term in query_lower for term in URGENCY_QUERY_TERMS)
+
+
+def has_symptom_urgent_heading(content_lower: str) -> bool:
+    return any(heading in content_lower for heading in SYMPTOM_URGENT_HEADINGS)
+
+
+def ranking_adjustments(
+    chunk: dict,
+    query_lower: str,
+    relevant_topics: set[str],
+    population_hint: str | None,
+) -> float:
+    """Light, source-grounded ranking adjustments on top of semantic similarity.
+
+    Symptom-specific queries boost matching symptom topics. General emergency
+    queries (no recognized symptom topic) prefer the Emergency patient chapter
+    rather than every 'give urgent attention' heading, including injury pages.
+    """
+    adjustment = 0.0
+    topic = chunk.get("topic")
+
+    if topic in relevant_topics:
+        adjustment += 0.08
+
+    if population_hint is not None:
+        population = chunk.get("population")
+        if population == population_hint:
+            adjustment += 0.12
+        elif population in ("Adult", "Child"):
+            adjustment -= 0.12
+
+    if query_asks_about_urgency(query_lower):
+        content_lower = chunk.get("content", "").lower()
+        if relevant_topics:
+            if topic in relevant_topics and has_symptom_urgent_heading(content_lower):
+                adjustment += 0.12
+        elif topic == "Emergency patient":
+            adjustment += 0.12
+
+    return adjustment
+
+
 def search_clinical_guidelines(
     query: str,
     top_k: int = 3,
@@ -33,36 +134,8 @@ def search_clinical_guidelines(
 
     chunks = load_chunks()
     query_lower = query.lower()
-
-    # Infer population only when the question explicitly identifies it.
-    population_hint = None
-    if "child" in query_lower or "children" in query_lower:
-        population_hint = "Child"
-    elif "adult" in query_lower:
-        population_hint = "Adult"
-
-    topic_terms = {
-        "Breathing difficulty": (
-            "breathing difficulty",
-            "difficulty breathing",
-            "breathing problems",
-            "cough",
-            "shortness of breath",
-        ),
-        "Wheeze/tight chest": (
-            "wheez",
-            "tight chest",
-        ),
-        "Fever": ("fever", "febrile", "temperature"),
-        "Chest pain": ("chest pain",),
-        "Convulsions": ("convulsion", "seizure"),
-    }
-
-    relevant_topics = {
-        topic
-        for topic, terms in topic_terms.items()
-        if any(term in query_lower for term in terms)
-    }
+    population_hint = infer_population_hint(query_lower)
+    relevant_topics = infer_relevant_topics(query_lower)
 
     query_embedding = get_model().encode(
         query,
@@ -83,41 +156,12 @@ def search_clinical_guidelines(
 
         chunk_embedding = chunk_embedding / norm
         semantic_score = float(np.dot(query_embedding, chunk_embedding))
-
-        # Keep semantic similarity as the primary ranking signal.
-        ranking_score = semantic_score
-
-        content_lower = chunk.get("content", "").lower()
-
-        # Prefer source chunks explicitly labeled for urgent attention
-        # when the user asks about danger signs or emergencies.
-        asks_about_urgency = any(
-            term in query_lower
-            for term in (
-                "danger sign",
-                "danger signs",
-                "emergency",
-                "urgent",
-                "urgently",
-            )
+        ranking_score = semantic_score + ranking_adjustments(
+            chunk,
+            query_lower,
+            relevant_topics,
+            population_hint,
         )
-
-        has_urgent_heading = (
-            "give urgent attention to the patient" in content_lower
-            or "give urgent attention to the child" in content_lower
-        )
-
-        if asks_about_urgency and has_urgent_heading:
-            ranking_score += 0.12
-
-        if chunk.get("topic") in relevant_topics:
-            ranking_score += 0.08
-
-        if population_hint is not None:
-            if chunk.get("population") == population_hint:
-                ranking_score += 0.12
-            elif chunk.get("population") in ("Adult", "Child"):
-                ranking_score -= 0.12
 
         results.append({
             "id": chunk["id"],

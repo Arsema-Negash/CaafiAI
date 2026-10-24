@@ -11,6 +11,13 @@ TOPIC_ALIASES = {
     "the emergency patient": "Emergency patient",
     "emergency child": "Emergency patient",
     "the emergency child": "Emergency patient",
+    "unconscious patient": "Unconscious patient",
+    "the unconscious patient": "Unconscious patient",
+    "decreased level of consciousness": "Decreased level of consciousness",
+    "injured patient": "Injured patient",
+    "the injured patient": "Injured patient",
+    "injured child": "Injured child",
+    "the injured child": "Injured child",
     "convulsions": "Convulsions",
     "seizures/convulsions": "Convulsions",
     "dizziness/vertigo": "Dizziness",
@@ -22,7 +29,10 @@ TOPIC_ALIASES = {
     "cough and/or breathing problems": "Breathing difficulty",
     "cough": "Cough",
     "cough, recurrent": "Cough",
+    "wheeze": "Wheeze/tight chest",
     "wheeze/tight chest": "Wheeze/tight chest",
+    "wheeze, recurrent": "Wheeze/tight chest",
+    "recurrent wheeze or cough": "Wheeze/tight chest",
     "chest pain": "Chest pain",
     "abdominal pain": "Abdominal pain",
     "abdominal symptoms": "Abdominal pain",
@@ -42,7 +52,11 @@ def load_processed_document() -> str:
 
 
 def detect_page_marker(line: str):
-    match = re.fullmatch(r"(Adult|Child)\s+(\d+)", line.strip(), re.IGNORECASE)
+    match = re.fullmatch(
+        r"(Adult|Child)\s+(\d+)",
+        line.strip(),
+        re.IGNORECASE,
+    )
 
     if match:
         return match.group(1).capitalize(), int(match.group(2))
@@ -50,8 +64,25 @@ def detect_page_marker(line: str):
     return None, None
 
 
+def _normalize_heading(line: str) -> str:
+    return line.strip().lower().rstrip(":.").strip()
+
+
 def detect_topic(line: str):
-    return TOPIC_ALIASES.get(line.strip().lower())
+    normalized = _normalize_heading(line)
+
+    # Preserve exact matches for existing topic headings.
+    topic = TOPIC_ALIASES.get(normalized)
+    if topic:
+        return topic
+
+    # Recognize headings that end with a page number, e.g. "Cough 141".
+    numbered_heading = re.fullmatch(r"(.+?)\s+\d+", normalized)
+    if numbered_heading:
+        heading = numbered_heading.group(1).strip()
+        return TOPIC_ALIASES.get(heading)
+
+    return None
 
 
 def extract_urgent_child_fever_section(lines: list[str]) -> str | None:
@@ -71,7 +102,8 @@ def extract_urgent_child_fever_section(lines: list[str]) -> str | None:
 
     end = next(
         (
-            i for i in range(start + 1, len(lines))
+            i
+            for i in range(start + 1, len(lines))
             if re.fullmatch(r"Child\s+136", lines[i], re.IGNORECASE)
         ),
         None,
@@ -81,7 +113,6 @@ def extract_urgent_child_fever_section(lines: list[str]) -> str | None:
         return None
 
     return "\n".join(lines[start:end]).strip()
-
 
 
 def create_chunks(text: str, chunk_size: int = 1500) -> list[dict]:
@@ -104,7 +135,8 @@ def create_chunks(text: str, chunk_size: int = 1500) -> list[dict]:
         )
 
     urgent_start = next(
-        i for i, line in enumerate(lines)
+        i
+        for i, line in enumerate(lines)
         if line.startswith(
             "Give urgent attention to the child with a fever "
             "(temperature ≥ 38°C now or in the past 3 days)"
@@ -117,14 +149,16 @@ def create_chunks(text: str, chunk_size: int = 1500) -> list[dict]:
         nonlocal current_lines, current_length
 
         if current_lines:
-            chunks.append({
-                "id": len(chunks) + 1,
-                "population": population,
-                "page": page,
-                "topic": topic,
-                "content": "\n".join(current_lines),
-                "source": SOURCE_NAME,
-            })
+            chunks.append(
+                {
+                    "id": len(chunks) + 1,
+                    "population": population,
+                    "page": page,
+                    "topic": topic,
+                    "content": "\n".join(current_lines),
+                    "source": SOURCE_NAME,
+                }
+            )
 
         current_lines = []
         current_length = 0
@@ -135,14 +169,16 @@ def create_chunks(text: str, chunk_size: int = 1500) -> list[dict]:
         if i == urgent_start:
             save_chunk()
 
-            chunks.append({
-                "id": len(chunks) + 1,
-                "population": "Child",
-                "page": 135,
-                "topic": "Fever",
-                "content": urgent_child_fever,
-                "source": SOURCE_NAME,
-            })
+            chunks.append(
+                {
+                    "id": len(chunks) + 1,
+                    "population": "Child",
+                    "page": 135,
+                    "topic": "Fever",
+                    "content": urgent_child_fever,
+                    "source": SOURCE_NAME,
+                }
+            )
 
             i = urgent_end
             continue
@@ -153,9 +189,12 @@ def create_chunks(text: str, chunk_size: int = 1500) -> list[dict]:
 
         if detected_population:
             save_chunk()
+            # A page number is not a topic change. Keep the current topic
+            # until a new heading appears, but reset when Adult/Child changes.
+            if detected_population != population:
+                topic = None
             population = detected_population
             page = detected_page
-            topic = None
             i += 1
             continue
 
@@ -167,14 +206,16 @@ def create_chunks(text: str, chunk_size: int = 1500) -> list[dict]:
 
         if len(line) > chunk_size:
             save_chunk()
-            chunks.append({
-                "id": len(chunks) + 1,
-                "population": population,
-                "page": page,
-                "topic": topic,
-                "content": line,
-                "source": SOURCE_NAME,
-            })
+            chunks.append(
+                {
+                    "id": len(chunks) + 1,
+                    "population": population,
+                    "page": page,
+                    "topic": topic,
+                    "content": line,
+                    "source": SOURCE_NAME,
+                }
+            )
             i += 1
             continue
 
@@ -196,8 +237,14 @@ if __name__ == "__main__":
     chunks = create_chunks(text)
 
     print(f"Total chunks created: {len(chunks)}")
-    print(f"Chunks without content: {sum(not c['content'].strip() for c in chunks)}")
-    print(f"Chunks over 1500 characters: {sum(len(c['content']) > 1500 for c in chunks)}")
+    print(
+        "Chunks without content: "
+        f"{sum(not c['content'].strip() for c in chunks)}"
+    )
+    print(
+        "Chunks over 1500 characters: "
+        f"{sum(len(c['content']) > 1500 for c in chunks)}"
+    )
 
     for chunk in chunks[:5]:
         print("\n--------------------")

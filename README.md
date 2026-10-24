@@ -121,10 +121,13 @@ Request:
 
 The current MVP supports English only. Other language values are rejected rather than falsely claiming that translation occurred. The response contains a short explanation, `severity: "not_assessed"`, `urgent: null`, source references, retrieved excerpts, similarity scores, and a safety disclaimer. Similarity scores are retrieval signals, not probabilities or clinical confidence.
 
-## Development checks
+## Development checks and retrieval evaluation
 
-- `python -m pytest -q` runs automated unit/API tests without requiring model downloads.
-- `python -m app.ai.test_retrieval` runs the retrieval regression checks against the locally built embedding index and model.
+- `python -m pytest -q` runs automated unit/API/evaluation-script tests without requiring model downloads.
+- `python -m app.ai.test_retrieval` runs the existing, small retrieval regression checks against the locally built embedding index and model.
+- `python -m app.ai.evaluate_retrieval` evaluates the draft query set in `evaluation/retrieval_cases.json` and reports topic-label, population-label, and combined label hit rates at top 3 and top 5, plus joint mean reciprocal rank.
+- Save a full JSON report when useful: `python -m app.ai.evaluate_retrieval --output reports/retrieval-evaluation.json`.
+- The evaluation cases are **draft metadata checks, not a clinically validated gold set**. A qualified clinical reviewer must verify each query and expected topic/population label against an authorized, current guideline before the scores are used for clinical claims. The reported hit rates measure metadata-label agreement only, not clinical relevance, answer correctness, or safety.
 - Rebuild the index after changing ingestion or chunking logic: `python -m app.data.ingestion` followed by `python -m app.data.build_embeddings`.
 
 ## Data, privacy, and Git
