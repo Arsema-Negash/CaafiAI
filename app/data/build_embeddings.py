@@ -21,13 +21,15 @@ def build_embeddings():
     print(f"Creating embeddings for {len(chunks)} chunks...")
 
     model = get_model()
-    for i, chunk in enumerate(chunks, start=1):
-        chunk["embedding"] = model.encode(
-            chunk["content"], normalize_embeddings=True
-        ).tolist()
-
-        if i % 25 == 0:
-            print(f"Processed {i}/{len(chunks)} chunks")
+    contents = [chunk["content"] for chunk in chunks]
+    embeddings = model.encode(
+        contents,
+        batch_size=32,
+        normalize_embeddings=True,
+        show_progress_bar=True,
+    )
+    for chunk, emb in zip(chunks, embeddings):
+        chunk["embedding"] = emb.tolist()
 
     OUTPUT_FILE.write_text(
         json.dumps(chunks, ensure_ascii=False),

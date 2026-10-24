@@ -15,7 +15,11 @@ def get_model():
             "Install the project requirements before using clinical retrieval."
         ) from exc
 
-    return SentenceTransformer(MODEL_NAME)
+    # Prefer local cached weights to avoid outbound network latency or timeouts.
+    try:
+        return SentenceTransformer(MODEL_NAME, local_files_only=True)
+    except Exception:
+        return SentenceTransformer(MODEL_NAME)
 
 
 def create_embedding(text: str):

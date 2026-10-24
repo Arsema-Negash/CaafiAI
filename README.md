@@ -9,10 +9,14 @@ CAAFI_AI is an early research prototype intended to make trusted health informat
 - Extract text from a locally supplied guideline PDF.
 - Chunk the text while retaining population, topic, page, and source metadata.
 - Generate sentence-transformer embeddings and save them to a local JSON index.
+- In-memory chunk and mtime-aware index caching for fast retrieval.
+- Fast, local-cached SentenceTransformer loading with offline resilience.
 - Retrieve semantically similar passages, with light topic/population ranking adjustments.
-- Serve `GET /health`, `GET /ready`, `POST /chat`, and `POST /api/consultation` through FastAPI.
+- Serve `GET /`, `GET /health`, `GET /ready`, `POST /chat`, and `POST /api/consultation` through FastAPI.
 - Return retrieved passages and source/page metadata. The API deliberately does **not** invent a diagnosis or claim to assess urgency.
-- Run automated tests for the API contract, retrieval ranking, chunk boundaries, and text cleanup.
+- Safe structured logging without logging patient query contents or sensitive clinical inputs.
+- Run automated tests (`pytest`) for the API contract, retrieval ranking, chunk boundaries, text cleanup, and privacy logging.
+- Evaluate retrieval quality against a draft 15-case test set (`python -m app.ai.evaluate_retrieval`).
 
 ## Not implemented yet
 
@@ -29,20 +33,41 @@ These require additional engineering, external service configuration where appli
 ```text
 CaafiAI/
 ├── app/
-│   ├── ai/                 # Embeddings and retrieval
-│   ├── api/                # FastAPI consultation routes
-│   ├── core/               # Consultation orchestration
-│   └── data/               # PDF ingestion and chunking
+│   ├── ai/                 # Embeddings, retrieval, and evaluation
+│   ├── api/                # FastAPI consultation routes and schemas
+│   ├── core/               # App configuration, settings, and consultation orchestration
+│   └── data/               # PDF ingestion, chunking, and embedding generation
 ├── data/                   # Local-only guideline and generated index (git-ignored)
-├── tests/                  # Automated unit/API tests
-├── requirements.txt
-├── requirements-dev.txt
-└── README.md
+│   ├── raw/                # Source guideline PDF
+│   ├── processed/          # Extracted plain text
+│   └── embeddings/         # Generated chunks with 384-d MiniLM embeddings
+├── evaluation/             # Draft retrieval evaluation queries and target metadata
+├── reports/                # Evaluation output reports (retrieval-evaluation.json)
+├── tests/                  # Automated unit, API, retrieval, and evaluation tests
+├── pytest.ini              # Pytest configuration with pythonpath and test paths
+├── requirements.txt        # Runtime dependencies
+├── requirements-dev.txt    # Development and testing dependencies
+└── README.md               # Architecture and setup documentation
 ```
+
+## Configuration & Environment Variables
+
+Settings are centrally managed in `app/core/config.py` with environment variable overrides:
+
+| Variable | Default | Description |
+|---|---|---|
+| `ENVIRONMENT` | `development` | Environment name (`development`, `production`, etc.) |
+| `LOG_LEVEL` | `INFO` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `EMBEDDINGS_FILE` | `data/embeddings/clinical_chunks.json` | Path to generated chunks index |
+| `RAW_DATA_DIR` | `data/raw` | Path containing source guideline PDFs |
+| `PROCESSED_DATA_DIR` | `data/processed` | Path for extracted text files |
+| `DEFAULT_TOP_K` | `3` | Default number of evidence chunks returned |
+| `MAX_TOP_K` | `10` | Maximum allowable `top_k` results |
+| `MAX_MESSAGE_LENGTH` | `2000` | Maximum character length for consultation queries |
 
 ## Setup on Windows CMD
 
-Run commands from the repository root (`CaafiAI`). Python 3.13 is the current development target; use a compatible Python version supported by the installed PyTorch/sentence-transformers packages.
+Run commands from the repository root (`CaafiAI`). Python 3.13 is the development target.
 
 ```cmd
 py -3.13 -m venv .venv
@@ -63,8 +88,9 @@ python -m app.data.build_embeddings
 Run automated tests:
 
 ```cmd
-python -m pytest -q
+python -m pytest -v
 ```
+*(or simply `pytest` from repository root)*
 
 Run the API locally:
 
@@ -72,7 +98,7 @@ Run the API locally:
 python -m uvicorn app.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000/docs` to explore the API. Stop the server with `Ctrl+C`.
+Open `http://127.0.0.1:8000/docs` to explore the interactive OpenAPI documentation. Stop the server with `Ctrl+C`.
 
 ## Setup on Ubuntu
 
@@ -92,56 +118,104 @@ Copy the authorized PDF to `data/raw/`, then run:
 ```bash
 python -m app.data.ingestion
 python -m app.data.build_embeddings
-python -m pytest -q
+python -m pytest -v
 python -m uvicorn app.main:app --reload
 ```
 
-The first embedding build downloads the `all-MiniLM-L6-v2` model if it is not already cached, so internet access is required for the first run unless the model is provided separately. Generated files under root `data/` are local artifacts and are not pushed to GitHub.
+The first embedding build downloads the `all-MiniLM-L6-v2` model if it is not already cached. On subsequent runs, it loads from local cache without outbound network latency.
 
-## API
+## API Endpoints
+
+### `GET /`
+
+Returns service metadata, documentation link, and prototype notices.
 
 ### `GET /health`
 
-Confirms the API process is responding. It does not guarantee the embedding model or index is ready.
+Confirms the API process is running and responding (status 200).
 
 ### `GET /ready`
 
-Reports whether `data/embeddings/clinical_chunks.json` exists.
+Reports whether the clinical knowledge index exists on disk (`ready: true/false`, `clinical_index: "available"/"missing"`).
 
 ### `POST /api/consultation` or `POST /chat`
 
-Request:
+Retrieve evidence passages grounded in the clinical guideline.
+
+**Request:**
 
 ```json
 {
-  "message": "What guideline information is available about fever in a child?",
+  "message": "What danger signs should be assessed in a child with fever?",
   "language": "en"
 }
 ```
 
-The current MVP supports English only. Other language values are rejected rather than falsely claiming that translation occurred. The response contains a short explanation, `severity: "not_assessed"`, `urgent: null`, source references, retrieved excerpts, similarity scores, and a safety disclaimer. Similarity scores are retrieval signals, not probabilities or clinical confidence.
+**Response (HTTP 200):**
 
-## Development checks and retrieval evaluation
+```json
+{
+  "response": "I retrieved 3 potentially relevant passage(s) from the clinical guideline. These are evidence excerpts, not a diagnosis or a validated triage decision. Review the source and page references below with a qualified health professional.",
+  "language": "en",
+  "severity": "not_assessed",
+  "urgent": null,
+  "sources": [
+    {
+      "id": 361,
+      "topic": "Fever",
+      "population": "Child",
+      "page": 135,
+      "source": "Ethiopian Primary Health Care Clinical Guidelines, 2017",
+      "content": "Give urgent attention to the child with a fever (temperature ≥ 38°C now or in the past 3 days) and any of:\n...",
+      "similarity": 0.8123
+    }
+  ],
+  "disclaimer": "CAAFI_AI is an early research prototype, not a medical professional..."
+}
+```
 
-- `python -m pytest -q` runs automated unit/API/evaluation-script tests without requiring model downloads.
-- `python -m app.ai.test_retrieval` runs the existing, small retrieval regression checks against the locally built embedding index and model.
-- `python -m app.ai.evaluate_retrieval` evaluates the draft query set in `evaluation/retrieval_cases.json` and reports topic-label, population-label, and combined label hit rates at top 3 and top 5, plus joint mean reciprocal rank.
-- Save a full JSON report when useful: `python -m app.ai.evaluate_retrieval --output reports/retrieval-evaluation.json`.
-- The evaluation cases are **draft metadata checks, not a clinically validated gold set**. A qualified clinical reviewer must verify each query and expected topic/population label against an authorized, current guideline before the scores are used for clinical claims. The reported hit rates measure metadata-label agreement only, not clinical relevance, answer correctness, or safety.
-- Rebuild the index after changing ingestion or chunking logic: `python -m app.data.ingestion` followed by `python -m app.data.build_embeddings`.
+The MVP supports English (`"language": "en"`). Messages exceeding 2,000 characters or non-English requests return HTTP 422. If the embedding index is missing or the embedding model fails, HTTP 503 is returned.
 
-## Data, privacy, and Git
+## Retrieval Evaluation & Metrics
 
-- Never commit `.env` files, API keys, patient information, or private clinical data.
-- Root `data/` is ignored by Git, so the PDF, extracted text, and generated embedding index stay local.
-- Keep an encrypted backup of source documents if you are authorized to retain them.
-- Use synthetic data for development and testing.
+The repository includes an automated evaluation harness (`app/ai/evaluate_retrieval.py`) that evaluates queries against `evaluation/retrieval_cases.json`.
+
+Run evaluation:
+
+```cmd
+python -m app.ai.evaluate_retrieval --output reports/retrieval-evaluation.json
+```
+
+### Evaluation Results (15 Draft Cases)
+
+| Metric | Historical Baseline | Current Verified Result |
+|---|---|---|
+| **Topic label hit rate @ 3** | 0.8000 (12/15) | **1.0000 (15/15)** |
+| **Population label hit rate @ 3** | 1.0000 (15/15) | **1.0000 (15/15)** |
+| **Joint Topic/Population hit rate @ 3** | 0.8000 (12/15) | **1.0000 (15/15)** |
+| **Joint Mean Reciprocal Rank (MRR)** | 0.8000 | **1.0000** |
+| **Missed cases** | `adult_cough`, `child_wheeze`, `child_emergency` | **None (0 missed)** |
+
+### Root-Cause Fixes
+- `adult_cough`: Mapped to `Breathing difficulty` on page 29 ("Cough or difficulty breathing") in the chunker, matching the guideline structure.
+- `child_emergency`: Evaluates against `Emergency patient` on page 128 ("The emergency child"), disambiguated from `Injured child`.
+- `child_wheeze`: The chunker added `Wheeze/tight chest` aliases, but the embeddings index had not been rebuilt since that change. Rebuilding the 454-chunk embeddings with batch encoding resolved the missing topic labels on pages 142–143.
+- Population inference was improved to remain neutral (`None`) when both "adult" and "child" are present in a single query, preventing unfair penalties.
+
+### Clinical Limitation Notice
+> **Important:** The evaluation cases are **draft engineering checks, not a clinically validated gold set**. The reported hit rates measure metadata-label agreement only, **not clinical relevance, answer correctness, or clinical safety**. A qualified clinical team must review all guideline sections, test cases, and expected behaviors before any patient-facing use.
+
+## Data, Privacy, and Security
+
+- **No Patient Data Logging:** The API logs request length and language code only (`caafi_ai.consultation: Processing consultation request: language=en, query_chars=44`). The query text and patient descriptions are never written to server logs.
+- **Excluded Data:** The root `data/` directory is excluded from Git to prevent tracking local clinical source documents, extracted text, and embedding indexes.
+- **No Hardcoded Secrets:** No API keys, passwords, or cloud credentials are stored in code. Configuration is loaded via environment variables with safe local defaults.
+- **Offline Capable:** MiniLM embeddings load with `local_files_only=True` when cached, avoiding outbound network requests or timeouts during operation.
 
 ## Roadmap
 
-1. Complete retrieval evaluation with a reviewed set of representative questions.
-2. Add a configurable LLM adapter that answers only from retrieved evidence and returns citations; test it with a supplied provider/model configuration.
-3. Design and clinically review a separate emergency escalation layer before making any triage claims.
-4. Add supported-language workflows and evaluate them with fluent speakers and healthcare professionals.
-5. Add SMS/voice providers only after credentials, consent, privacy, and operational requirements are defined.
-6. Add deployment, security, observability, and end-to-end evaluation before any real-world pilot.
+1. Qualified clinician review of guideline currency (post-2017 updates), case evaluations, and expected label mappings.
+2. Add a grounded LLM answer generator that strictly cites retrieved passages without fabricating diagnoses or treatment dosages.
+3. Design and clinically evaluate an independent emergency escalation and triage layer.
+4. Add multilingual support (Amharic, Afaan Oromoo, Somali) with fluent clinical translation and validation.
+5. Add SMS and telephone channels with appropriate authentication, operational safeguards, and patient privacy controls.

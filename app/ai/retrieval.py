@@ -4,20 +4,43 @@ from pathlib import Path
 import numpy as np
 
 from app.ai.embeddings import get_model
+from app.core.config import settings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-EMBEDDINGS_FILE = PROJECT_ROOT / "data" / "embeddings" / "clinical_chunks.json"
+EMBEDDINGS_FILE = settings.embeddings_path
+
+
+_cached_chunks: list[dict] | None = None
+_cached_file: Path | None = None
+_cached_mtime: float | None = None
 
 
 def load_chunks() -> list[dict]:
-    """Load clinical chunks and their stored embeddings."""
+    """Load clinical chunks and their stored embeddings with in-memory caching."""
+    global _cached_chunks, _cached_file, _cached_mtime
+
     if not EMBEDDINGS_FILE.exists():
+        _cached_chunks = None
+        _cached_file = None
+        _cached_mtime = None
         raise FileNotFoundError(
             "Clinical embeddings not found. Run "
             "'python -m app.data.build_embeddings' first."
         )
 
-    return json.loads(EMBEDDINGS_FILE.read_text(encoding="utf-8"))
+    current_mtime = EMBEDDINGS_FILE.stat().st_mtime
+    if (
+        _cached_chunks is not None
+        and _cached_file == EMBEDDINGS_FILE
+        and _cached_mtime == current_mtime
+    ):
+        return _cached_chunks
+
+    data = json.loads(EMBEDDINGS_FILE.read_text(encoding="utf-8"))
+    _cached_chunks = data
+    _cached_file = EMBEDDINGS_FILE
+    _cached_mtime = current_mtime
+    return _cached_chunks
 
 
 SYMPTOM_TOPIC_TERMS = {
@@ -60,10 +83,12 @@ SYMPTOM_URGENT_HEADINGS = (
 
 
 def infer_population_hint(query_lower: str) -> str | None:
-    """Return Adult/Child only when the query names that population."""
-    if "child" in query_lower or "children" in query_lower:
+    """Return Adult/Child only when the query unambiguously names that population."""
+    has_child = "child" in query_lower or "children" in query_lower
+    has_adult = "adult" in query_lower
+    if has_child and not has_adult:
         return "Child"
-    if "adult" in query_lower:
+    if has_adult and not has_child:
         return "Adult"
     return None
 

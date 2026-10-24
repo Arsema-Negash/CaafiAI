@@ -4,22 +4,18 @@
     "metrics_note": "Label-hit rates measure agreement with provisional topic/population metadata only; they are not clinical relevance, answer correctness, or safety metrics.",
     "cutoffs": {
       "3": {
-        "topic_label_hit_rate_at_3": 0.8,
+        "topic_label_hit_rate_at_3": 1.0,
         "population_label_hit_rate_at_3": 1.0,
-        "joint_topic_population_hit_rate_at_3": 0.8
+        "joint_topic_population_hit_rate_at_3": 1.0
       },
       "5": {
-        "topic_label_hit_rate_at_5": 0.8,
+        "topic_label_hit_rate_at_5": 1.0,
         "population_label_hit_rate_at_5": 1.0,
-        "joint_topic_population_hit_rate_at_5": 0.8
+        "joint_topic_population_hit_rate_at_5": 1.0
       }
     },
-    "joint_mean_reciprocal_rank": 0.8,
-    "cases_with_no_joint_label_match": [
-      "adult_cough",
-      "child_wheeze",
-      "child_emergency"
-    ]
+    "joint_mean_reciprocal_rank": 1.0,
+    "cases_with_no_joint_label_match": []
   },
   "cases": [
     {
@@ -41,16 +37,16 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 369,
+          "id": 415,
           "topic": "Breathing difficulty",
           "population": "Child",
           "page": 141,
           "semantic_score": 0.5740303993225098,
-          "ranking_score": 0.8940303993225097
+          "ranking_score": 0.8940303993225098
         },
         {
           "rank": 2,
-          "id": 331,
+          "id": 377,
           "topic": "Emergency patient",
           "population": "Child",
           "page": 128,
@@ -59,26 +55,26 @@
         },
         {
           "rank": 3,
-          "id": 345,
-          "topic": null,
+          "id": 366,
+          "topic": "Abdominal pain",
+          "population": "Child",
+          "page": 127,
+          "semantic_score": 0.6210629940032959,
+          "ranking_score": 0.7410629940032959
+        },
+        {
+          "rank": 4,
+          "id": 391,
+          "topic": "Decreased level of consciousness",
           "population": "Child",
           "page": 132,
           "semantic_score": 0.6161781549453735,
           "ranking_score": 0.7361781549453735
         },
         {
-          "rank": 4,
-          "id": 343,
-          "topic": null,
-          "population": "Child",
-          "page": 132,
-          "semantic_score": 0.48832178115844727,
-          "ranking_score": 0.7283217811584473
-        },
-        {
           "rank": 5,
-          "id": 406,
-          "topic": null,
+          "id": 452,
+          "topic": "Diarrhoea",
           "population": "Child",
           "page": 156,
           "semantic_score": 0.5980569124221802,
@@ -105,48 +101,48 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 73,
+          "id": 108,
           "topic": "Breathing difficulty",
           "population": "Adult",
           "page": 29,
           "semantic_score": 0.3675132095813751,
-          "ranking_score": 0.6875132095813751
+          "ranking_score": 0.6875132095813752
         },
         {
           "rank": 2,
-          "id": 75,
-          "topic": "Wheeze/tight chest",
-          "population": "Adult",
-          "page": 30,
-          "semantic_score": 0.42665642499923706,
-          "ranking_score": 0.666656424999237
+          "id": 12,
+          "topic": "Breathing difficulty",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.5387781858444214,
+          "ranking_score": 0.6187781858444213
         },
         {
           "rank": 3,
-          "id": 69,
-          "topic": "Chest pain",
-          "population": "Adult",
-          "page": 28,
-          "semantic_score": 0.4119018316268921,
-          "ranking_score": 0.6519018316268921
+          "id": 26,
+          "topic": "Breathing difficulty",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.5387781858444214,
+          "ranking_score": 0.6187781858444213
         },
         {
           "rank": 4,
-          "id": 50,
-          "topic": "Dizziness",
-          "population": "Adult",
-          "page": 21,
-          "semantic_score": 0.3798144459724426,
-          "ranking_score": 0.6198144459724426
-        },
-        {
-          "rank": 5,
-          "id": 23,
+          "id": 58,
           "topic": "Emergency patient",
           "population": "Adult",
           "page": 12,
-          "semantic_score": 0.47848421335220337,
-          "ranking_score": 0.5984842133522034
+          "semantic_score": 0.4784841537475586,
+          "ranking_score": 0.5984841537475586
+        },
+        {
+          "rank": 5,
+          "id": 107,
+          "topic": "Breathing difficulty",
+          "population": "Adult",
+          "page": 29,
+          "semantic_score": 0.39652106165885925,
+          "ranking_score": 0.5965210616588592
         }
       ]
     },
@@ -169,7 +165,7 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 369,
+          "id": 415,
           "topic": "Breathing difficulty",
           "population": "Child",
           "page": 141,
@@ -178,7 +174,7 @@
         },
         {
           "rank": 2,
-          "id": 371,
+          "id": 417,
           "topic": "Breathing difficulty",
           "population": "Child",
           "page": 141,
@@ -187,7 +183,7 @@
         },
         {
           "rank": 3,
-          "id": 370,
+          "id": 416,
           "topic": "Breathing difficulty",
           "population": "Child",
           "page": 141,
@@ -196,44 +192,44 @@
         },
         {
           "rank": 4,
-          "id": 330,
-          "topic": null,
+          "id": 369,
+          "topic": "Cough",
           "population": "Child",
           "page": 127,
-          "semantic_score": 0.6029064059257507,
-          "ranking_score": 0.7229064059257507
+          "semantic_score": 0.5977538228034973,
+          "ranking_score": 0.7177538228034973
         },
         {
           "rank": 5,
-          "id": 331,
+          "id": 377,
           "topic": "Emergency patient",
           "population": "Child",
           "page": 128,
-          "semantic_score": 0.5584071278572083,
-          "ranking_score": 0.6784071278572082
+          "semantic_score": 0.5584070682525635,
+          "ranking_score": 0.6784070682525635
         }
       ]
     },
     {
       "id": "adult_cough",
       "query": "What does the guideline cover for an adult with a cough?",
-      "expected_topic": "Cough",
+      "expected_topic": "Breathing difficulty",
       "expected_population": "Adult",
-      "topic_first_rank": null,
+      "topic_first_rank": 1,
       "population_first_rank": 1,
-      "joint_first_rank": null,
+      "joint_first_rank": 1,
       "hits": {
-        "topic_hit_at_3": false,
+        "topic_hit_at_3": true,
         "population_hit_at_3": true,
-        "joint_hit_at_3": false,
-        "topic_hit_at_5": false,
+        "joint_hit_at_3": true,
+        "topic_hit_at_5": true,
         "population_hit_at_5": true,
-        "joint_hit_at_5": false
+        "joint_hit_at_5": true
       },
       "top_results": [
         {
           "rank": 1,
-          "id": 72,
+          "id": 107,
           "topic": "Breathing difficulty",
           "population": "Adult",
           "page": 29,
@@ -242,7 +238,7 @@
         },
         {
           "rank": 2,
-          "id": 73,
+          "id": 108,
           "topic": "Breathing difficulty",
           "population": "Adult",
           "page": 29,
@@ -251,21 +247,21 @@
         },
         {
           "rank": 3,
-          "id": 209,
-          "topic": null,
+          "id": 244,
+          "topic": "Fever",
           "population": "Adult",
           "page": 81,
-          "semantic_score": 0.5097828507423401,
-          "ranking_score": 0.6297828507423401
+          "semantic_score": 0.5097829103469849,
+          "ranking_score": 0.6297829103469849
         },
         {
           "rank": 4,
-          "id": 322,
-          "topic": null,
+          "id": 357,
+          "topic": "Fever",
           "population": "Adult",
           "page": 122,
-          "semantic_score": 0.4761267304420471,
-          "ranking_score": 0.5961267304420471
+          "semantic_score": 0.4761267900466919,
+          "ranking_score": 0.5961267900466919
         },
         {
           "rank": 5,
@@ -297,7 +293,7 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 355,
+          "id": 401,
           "topic": "Fever",
           "population": "Child",
           "page": 135,
@@ -306,7 +302,16 @@
         },
         {
           "rank": 2,
-          "id": 353,
+          "id": 372,
+          "topic": "Fever",
+          "population": "Child",
+          "page": 127,
+          "semantic_score": 0.5307837128639221,
+          "ranking_score": 0.7307837128639221
+        },
+        {
+          "rank": 3,
+          "id": 399,
           "topic": "Fever",
           "population": "Child",
           "page": 135,
@@ -314,31 +319,22 @@
           "ranking_score": 0.7172798037528991
         },
         {
-          "rank": 3,
-          "id": 330,
-          "topic": null,
+          "rank": 4,
+          "id": 374,
+          "topic": "Injured child",
           "population": "Child",
           "page": 127,
-          "semantic_score": 0.5828740000724792,
-          "ranking_score": 0.7028740000724792
+          "semantic_score": 0.5867661237716675,
+          "ranking_score": 0.7067661237716675
         },
         {
-          "rank": 4,
-          "id": 401,
-          "topic": null,
+          "rank": 5,
+          "id": 447,
+          "topic": "Diarrhoea",
           "population": "Child",
           "page": 154,
           "semantic_score": 0.5364276766777039,
           "ranking_score": 0.6564276766777039
-        },
-        {
-          "rank": 5,
-          "id": 396,
-          "topic": null,
-          "population": "Child",
-          "page": 151,
-          "semantic_score": 0.5354443788528442,
-          "ranking_score": 0.6554443788528442
         }
       ]
     },
@@ -361,7 +357,7 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 37,
+          "id": 72,
           "topic": "Fever",
           "population": "Adult",
           "page": 17,
@@ -370,7 +366,7 @@
         },
         {
           "rank": 2,
-          "id": 36,
+          "id": 71,
           "topic": "Fever",
           "population": "Adult",
           "page": 17,
@@ -379,30 +375,30 @@
         },
         {
           "rank": 3,
-          "id": 38,
+          "id": 275,
           "topic": "Fever",
-          "population": "Adult",
-          "page": 17,
-          "semantic_score": 0.45563197135925293,
-          "ranking_score": 0.6556319713592529
-        },
-        {
-          "rank": 4,
-          "id": 240,
-          "topic": null,
           "population": "Adult",
           "page": 92,
           "semantic_score": 0.5235495567321777,
-          "ranking_score": 0.6435495567321777
+          "ranking_score": 0.7235495567321777
+        },
+        {
+          "rank": 4,
+          "id": 357,
+          "topic": "Fever",
+          "population": "Adult",
+          "page": 122,
+          "semantic_score": 0.4745810329914093,
+          "ranking_score": 0.6745810329914093
         },
         {
           "rank": 5,
-          "id": 322,
-          "topic": null,
+          "id": 355,
+          "topic": "Fever",
           "population": "Adult",
           "page": 122,
-          "semantic_score": 0.4745810031890869,
-          "ranking_score": 0.5945810031890869
+          "semantic_score": 0.46835628151893616,
+          "ranking_score": 0.6683562815189361
         }
       ]
     },
@@ -425,7 +421,7 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 342,
+          "id": 388,
           "topic": "Convulsions",
           "population": "Child",
           "page": 131,
@@ -434,8 +430,8 @@
         },
         {
           "rank": 2,
-          "id": 403,
-          "topic": null,
+          "id": 449,
+          "topic": "Diarrhoea",
           "population": "Child",
           "page": 155,
           "semantic_score": 0.6324352025985718,
@@ -443,8 +439,8 @@
         },
         {
           "rank": 3,
-          "id": 404,
-          "topic": null,
+          "id": 450,
+          "topic": "Diarrhoea",
           "population": "Child",
           "page": 155,
           "semantic_score": 0.5614148378372192,
@@ -452,7 +448,7 @@
         },
         {
           "rank": 4,
-          "id": 340,
+          "id": 386,
           "topic": "Convulsions",
           "population": "Child",
           "page": 131,
@@ -461,12 +457,12 @@
         },
         {
           "rank": 5,
-          "id": 330,
-          "topic": null,
+          "id": 376,
+          "topic": "Wheeze/tight chest",
           "population": "Child",
           "page": 127,
-          "semantic_score": 0.5065397620201111,
-          "ranking_score": 0.6265397620201111
+          "semantic_score": 0.5275518894195557,
+          "ranking_score": 0.6475518894195557
         }
       ]
     },
@@ -489,7 +485,7 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 69,
+          "id": 104,
           "topic": "Chest pain",
           "population": "Adult",
           "page": 28,
@@ -498,7 +494,7 @@
         },
         {
           "rank": 2,
-          "id": 70,
+          "id": 105,
           "topic": "Chest pain",
           "population": "Adult",
           "page": 28,
@@ -507,7 +503,7 @@
         },
         {
           "rank": 3,
-          "id": 22,
+          "id": 57,
           "topic": "Emergency patient",
           "population": "Adult",
           "page": 12,
@@ -516,17 +512,17 @@
         },
         {
           "rank": 4,
-          "id": 244,
-          "topic": null,
+          "id": 279,
+          "topic": "Fever",
           "population": "Adult",
           "page": 94,
-          "semantic_score": 0.4650050401687622,
-          "ranking_score": 0.5850050401687622
+          "semantic_score": 0.4650050699710846,
+          "ranking_score": 0.5850050699710846
         },
         {
           "rank": 5,
-          "id": 235,
-          "topic": null,
+          "id": 270,
+          "topic": "Fever",
           "population": "Adult",
           "page": 91,
           "semantic_score": 0.4480977952480316,
@@ -539,62 +535,62 @@
       "query": "What guidance is relevant when a child has wheezing or a tight chest?",
       "expected_topic": "Wheeze/tight chest",
       "expected_population": "Child",
-      "topic_first_rank": null,
+      "topic_first_rank": 1,
       "population_first_rank": 1,
-      "joint_first_rank": null,
+      "joint_first_rank": 1,
       "hits": {
-        "topic_hit_at_3": false,
+        "topic_hit_at_3": true,
         "population_hit_at_3": true,
-        "joint_hit_at_3": false,
-        "topic_hit_at_5": false,
+        "joint_hit_at_3": true,
+        "topic_hit_at_5": true,
         "population_hit_at_5": true,
-        "joint_hit_at_5": false
+        "joint_hit_at_5": true
       },
       "top_results": [
         {
           "rank": 1,
-          "id": 371,
-          "topic": "Breathing difficulty",
-          "population": "Child",
-          "page": 141,
-          "semantic_score": 0.5181167721748352,
-          "ranking_score": 0.6381167721748352
-        },
-        {
-          "rank": 2,
-          "id": 372,
-          "topic": null,
+          "id": 418,
+          "topic": "Wheeze/tight chest",
           "population": "Child",
           "page": 142,
           "semantic_score": 0.5001553893089294,
-          "ranking_score": 0.6201553893089294
+          "ranking_score": 0.7001553893089294
+        },
+        {
+          "rank": 2,
+          "id": 420,
+          "topic": "Wheeze/tight chest",
+          "population": "Child",
+          "page": 143,
+          "semantic_score": 0.4724830389022827,
+          "ranking_score": 0.6724830389022827
         },
         {
           "rank": 3,
-          "id": 369,
+          "id": 376,
+          "topic": "Wheeze/tight chest",
+          "population": "Child",
+          "page": 127,
+          "semantic_score": 0.46741512417793274,
+          "ranking_score": 0.6674151241779327
+        },
+        {
+          "rank": 4,
+          "id": 417,
+          "topic": "Breathing difficulty",
+          "population": "Child",
+          "page": 141,
+          "semantic_score": 0.5181167125701904,
+          "ranking_score": 0.6381167125701904
+        },
+        {
+          "rank": 5,
+          "id": 415,
           "topic": "Breathing difficulty",
           "population": "Child",
           "page": 141,
           "semantic_score": 0.4945850968360901,
           "ranking_score": 0.6145850968360901
-        },
-        {
-          "rank": 4,
-          "id": 331,
-          "topic": "Emergency patient",
-          "population": "Child",
-          "page": 128,
-          "semantic_score": 0.49279576539993286,
-          "ranking_score": 0.6127957653999329
-        },
-        {
-          "rank": 5,
-          "id": 374,
-          "topic": null,
-          "population": "Child",
-          "page": 143,
-          "semantic_score": 0.4724830389022827,
-          "ranking_score": 0.5924830389022827
         }
       ]
     },
@@ -617,35 +613,35 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 51,
+          "id": 86,
           "topic": "Dizziness",
           "population": "Adult",
           "page": 21,
           "semantic_score": 0.599043607711792,
-          "ranking_score": 0.719043607711792
+          "ranking_score": 0.799043607711792
         },
         {
           "rank": 2,
-          "id": 49,
+          "id": 84,
           "topic": "Dizziness",
           "population": "Adult",
           "page": 21,
           "semantic_score": 0.5735265016555786,
-          "ranking_score": 0.6935265016555786
+          "ranking_score": 0.7735265016555786
         },
         {
           "rank": 3,
-          "id": 50,
+          "id": 85,
           "topic": "Dizziness",
           "population": "Adult",
           "page": 21,
           "semantic_score": 0.5312634706497192,
-          "ranking_score": 0.6512634706497192
+          "ranking_score": 0.7312634706497192
         },
         {
           "rank": 4,
-          "id": 319,
-          "topic": null,
+          "id": 354,
+          "topic": "Fever",
           "population": "Adult",
           "page": 121,
           "semantic_score": 0.4864417612552643,
@@ -653,12 +649,12 @@
         },
         {
           "rank": 5,
-          "id": 46,
-          "topic": null,
-          "population": "Adult",
-          "page": 20,
-          "semantic_score": 0.39722195267677307,
-          "ranking_score": 0.5172219526767731
+          "id": 17,
+          "topic": "Dizziness",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.4864242672920227,
+          "ranking_score": 0.5664242672920227
         }
       ]
     },
@@ -681,48 +677,48 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 52,
+          "id": 87,
           "topic": "Headache",
           "population": "Adult",
           "page": 22,
-          "semantic_score": 0.4779372811317444,
-          "ranking_score": 0.5979372811317444
+          "semantic_score": 0.4779373109340668,
+          "ranking_score": 0.6779373109340667
         },
         {
           "rank": 2,
-          "id": 54,
+          "id": 89,
           "topic": "Headache",
           "population": "Adult",
           "page": 22,
           "semantic_score": 0.40630149841308594,
-          "ranking_score": 0.5263014984130859
+          "ranking_score": 0.6063014984130859
         },
         {
           "rank": 3,
-          "id": 241,
-          "topic": null,
-          "population": "Adult",
-          "page": 93,
-          "semantic_score": 0.4062003195285797,
-          "ranking_score": 0.5262003195285797
-        },
-        {
-          "rank": 4,
-          "id": 27,
-          "topic": null,
-          "population": "Adult",
-          "page": 14,
-          "semantic_score": 0.37348848581314087,
-          "ranking_score": 0.49348848581314086
-        },
-        {
-          "rank": 5,
-          "id": 53,
+          "id": 88,
           "topic": "Headache",
           "population": "Adult",
           "page": 22,
           "semantic_score": 0.36956870555877686,
-          "ranking_score": 0.48956870555877685
+          "ranking_score": 0.5695687055587768
+        },
+        {
+          "rank": 4,
+          "id": 45,
+          "topic": "Headache",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.4802805185317993,
+          "ranking_score": 0.5602805185317993
+        },
+        {
+          "rank": 5,
+          "id": 20,
+          "topic": "Headache",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.47381603717803955,
+          "ranking_score": 0.5538160371780395
         }
       ]
     },
@@ -745,48 +741,48 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 378,
+          "id": 424,
           "topic": "Abdominal pain",
           "population": "Child",
           "page": 144,
           "semantic_score": 0.5477703809738159,
-          "ranking_score": 0.6677703809738159
+          "ranking_score": 0.7477703809738159
         },
         {
           "rank": 2,
-          "id": 377,
+          "id": 366,
+          "topic": "Abdominal pain",
+          "population": "Child",
+          "page": 127,
+          "semantic_score": 0.5196430683135986,
+          "ranking_score": 0.7196430683135986
+        },
+        {
+          "rank": 3,
+          "id": 423,
           "topic": "Abdominal pain",
           "population": "Child",
           "page": 144,
           "semantic_score": 0.4799143373966217,
-          "ranking_score": 0.5999143373966217
+          "ranking_score": 0.6799143373966217
         },
         {
-          "rank": 3,
-          "id": 376,
+          "rank": 4,
+          "id": 422,
           "topic": "Abdominal pain",
           "population": "Child",
           "page": 144,
           "semantic_score": 0.4586748480796814,
-          "ranking_score": 0.5786748480796814
-        },
-        {
-          "rank": 4,
-          "id": 330,
-          "topic": null,
-          "population": "Child",
-          "page": 127,
-          "semantic_score": 0.4517478048801422,
-          "ranking_score": 0.5717478048801422
+          "ranking_score": 0.6586748480796814
         },
         {
           "rank": 5,
-          "id": 396,
-          "topic": null,
-          "population": "Child",
-          "page": 151,
-          "semantic_score": 0.4490574598312378,
-          "ranking_score": 0.5690574598312378
+          "id": 38,
+          "topic": "Abdominal pain",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.5196430683135986,
+          "ranking_score": 0.5996430683135986
         }
       ]
     },
@@ -809,48 +805,48 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 87,
+          "id": 122,
           "topic": "Diarrhoea",
           "population": "Adult",
           "page": 34,
-          "semantic_score": 0.5488329529762268,
-          "ranking_score": 0.6688329529762268
+          "semantic_score": 0.5488330125808716,
+          "ranking_score": 0.7488330125808715
         },
         {
           "rank": 2,
-          "id": 183,
-          "topic": null,
-          "population": "Adult",
-          "page": 70,
-          "semantic_score": 0.45130565762519836,
-          "ranking_score": 0.5713056576251984
-        },
-        {
-          "rank": 3,
-          "id": 86,
-          "topic": null,
-          "population": "Adult",
-          "page": 34,
-          "semantic_score": 0.4466944634914398,
-          "ranking_score": 0.5666944634914398
-        },
-        {
-          "rank": 4,
-          "id": 88,
+          "id": 123,
           "topic": "Diarrhoea",
           "population": "Adult",
           "page": 34,
           "semantic_score": 0.4133821725845337,
-          "ranking_score": 0.5333821725845337
+          "ranking_score": 0.6133821725845336
+        },
+        {
+          "rank": 3,
+          "id": 16,
+          "topic": "Diarrhoea",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.5317907929420471,
+          "ranking_score": 0.6117907929420471
+        },
+        {
+          "rank": 4,
+          "id": 30,
+          "topic": "Diarrhoea",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.5317907929420471,
+          "ranking_score": 0.6117907929420471
         },
         {
           "rank": 5,
-          "id": 90,
-          "topic": null,
+          "id": 125,
+          "topic": "Diarrhoea",
           "population": "Adult",
           "page": 35,
           "semantic_score": 0.38046199083328247,
-          "ranking_score": 0.5004619908332825
+          "ranking_score": 0.5804619908332824
         }
       ]
     },
@@ -859,62 +855,62 @@
       "query": "What are the general emergency danger signs for a child?",
       "expected_topic": "Emergency patient",
       "expected_population": "Child",
-      "topic_first_rank": null,
+      "topic_first_rank": 1,
       "population_first_rank": 1,
-      "joint_first_rank": null,
+      "joint_first_rank": 1,
       "hits": {
-        "topic_hit_at_3": false,
+        "topic_hit_at_3": true,
         "population_hit_at_3": true,
-        "joint_hit_at_3": false,
-        "topic_hit_at_5": false,
+        "joint_hit_at_3": true,
+        "topic_hit_at_5": true,
         "population_hit_at_5": true,
-        "joint_hit_at_5": false
+        "joint_hit_at_5": true
       },
       "top_results": [
         {
           "rank": 1,
-          "id": 346,
-          "topic": null,
+          "id": 371,
+          "topic": "Emergency patient",
           "population": "Child",
-          "page": 133,
-          "semantic_score": 0.40966540575027466,
-          "ranking_score": 0.6496654057502746
+          "page": 127,
+          "semantic_score": 0.5474392771720886,
+          "ranking_score": 0.7874392771720886
         },
         {
           "rank": 2,
-          "id": 345,
-          "topic": null,
-          "population": "Child",
-          "page": 132,
-          "semantic_score": 0.5115540027618408,
-          "ranking_score": 0.6315540027618408
+          "id": 43,
+          "topic": "Emergency patient",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.5474392771720886,
+          "ranking_score": 0.6674392771720886
         },
         {
           "rank": 3,
-          "id": 330,
-          "topic": null,
+          "id": 374,
+          "topic": "Injured child",
           "population": "Child",
           "page": 127,
-          "semantic_score": 0.5109158158302307,
-          "ranking_score": 0.6309158158302307
+          "semantic_score": 0.5417942404747009,
+          "ranking_score": 0.6617942404747009
         },
         {
           "rank": 4,
-          "id": 343,
-          "topic": null,
+          "id": 377,
+          "topic": "Emergency patient",
           "population": "Child",
-          "page": 132,
-          "semantic_score": 0.38460999727249146,
-          "ranking_score": 0.6246099972724914
+          "page": 128,
+          "semantic_score": 0.4000893533229828,
+          "ranking_score": 0.6400893533229828
         },
         {
           "rank": 5,
-          "id": 355,
-          "topic": "Fever",
+          "id": 366,
+          "topic": "Abdominal pain",
           "population": "Child",
-          "page": 135,
-          "semantic_score": 0.37306317687034607,
-          "ranking_score": 0.6130631768703461
+          "page": 127,
+          "semantic_score": 0.5179270505905151,
+          "ranking_score": 0.6379270505905151
         }
       ]
     },
@@ -937,48 +933,48 @@
       "top_results": [
         {
           "rank": 1,
-          "id": 23,
+          "id": 58,
           "topic": "Emergency patient",
           "population": "Adult",
           "page": 12,
-          "semantic_score": 0.5578094720840454,
-          "ranking_score": 0.6778094720840454
+          "semantic_score": 0.5578093528747559,
+          "ranking_score": 0.7978093528747559
         },
         {
           "rank": 2,
-          "id": 164,
-          "topic": null,
+          "id": 18,
+          "topic": "Emergency patient",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.5658150315284729,
+          "ranking_score": 0.6858150315284729
+        },
+        {
+          "rank": 3,
+          "id": 32,
+          "topic": "Emergency patient",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.5658150315284729,
+          "ranking_score": 0.6858150315284729
+        },
+        {
+          "rank": 4,
+          "id": 199,
+          "topic": "Fever",
           "population": "Adult",
           "page": 63,
           "semantic_score": 0.5483331680297852,
           "ranking_score": 0.6683331680297852
         },
         {
-          "rank": 3,
-          "id": 83,
-          "topic": null,
-          "population": "Adult",
-          "page": 33,
-          "semantic_score": 0.4225841462612152,
-          "ranking_score": 0.6625841462612152
-        },
-        {
-          "rank": 4,
-          "id": 161,
-          "topic": null,
-          "population": "Adult",
-          "page": 62,
-          "semantic_score": 0.4200182557106018,
-          "ranking_score": 0.6600182557106018
-        },
-        {
           "rank": 5,
-          "id": 167,
-          "topic": null,
+          "id": 57,
+          "topic": "Emergency patient",
           "population": "Adult",
-          "page": 64,
-          "semantic_score": 0.41040870547294617,
-          "ranking_score": 0.6504087054729462
+          "page": 12,
+          "semantic_score": 0.42390215396881104,
+          "ranking_score": 0.663902153968811
         }
       ]
     }

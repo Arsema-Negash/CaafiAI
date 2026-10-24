@@ -186,3 +186,53 @@ def test_zero_norm_embeddings_are_skipped(tmp_path, monkeypatch):
     results = retrieval.search_clinical_guidelines("fever in a child", top_k=5)
     assert [item["id"] for item in results] == [2]
 
+
+def test_infer_population_hint_neutral_when_both_present():
+    assert retrieval.infer_population_hint("fever in adults and children") is None
+    assert retrieval.infer_population_hint("child fever") == "Child"
+    assert retrieval.infer_population_hint("adult cough") == "Adult"
+    assert retrieval.infer_population_hint("general headache") is None
+
+
+def test_retrieval_reloads_when_embeddings_file_is_updated(tmp_path, monkeypatch):
+    index1 = tmp_path / "chunks1.json"
+    index1.write_text(
+        json.dumps([
+            {
+                "id": 101,
+                "topic": "Fever",
+                "population": "Adult",
+                "page": 20,
+                "source": "Guide 1",
+                "content": "Fever v1",
+                "embedding": [1.0, 0.0],
+            }
+        ]),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(retrieval, "EMBEDDINGS_FILE", index1)
+    monkeypatch.setattr(retrieval, "get_model", lambda: FakeModel())
+
+    res1 = retrieval.search_clinical_guidelines("fever", top_k=1)
+    assert res1[0]["id"] == 101
+
+    # Now point to index2 with different chunk id
+    index2 = tmp_path / "chunks2.json"
+    index2.write_text(
+        json.dumps([
+            {
+                "id": 202,
+                "topic": "Fever",
+                "population": "Adult",
+                "page": 20,
+                "source": "Guide 2",
+                "content": "Fever v2",
+                "embedding": [1.0, 0.0],
+            }
+        ]),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(retrieval, "EMBEDDINGS_FILE", index2)
+    res2 = retrieval.search_clinical_guidelines("fever", top_k=1)
+    assert res2[0]["id"] == 202
+

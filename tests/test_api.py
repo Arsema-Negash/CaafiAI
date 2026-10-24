@@ -96,3 +96,54 @@ def test_chat_endpoint_returns_evidence_and_does_not_assess_urgency(client, monk
     assert body["severity"] == "not_assessed"
     assert len(body["sources"]) == 1
     assert body["sources"][0]["page"] == 135
+
+
+def test_root_endpoint_returns_service_info(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["service"] == "CAAFI_AI"
+    assert "guideline" in data
+    assert "notice" in data
+
+
+def test_message_exceeding_max_length_is_rejected(client):
+    too_long = "a" * 2001
+    response = client.post("/chat", json={"message": too_long})
+    assert response.status_code == 422
+
+
+def test_runtime_error_returns_service_unavailable(client, monkeypatch):
+    def boom(query, top_k):
+        raise RuntimeError("Sentence transformer failed to load.")
+
+    monkeypatch.setattr(ai_engine, "search_clinical_guidelines", boom)
+    response = client.post("/chat", json={"message": "fever in an adult"})
+    assert response.status_code == 503
+    assert "Sentence transformer" in response.json()["detail"]
+
+
+def test_readiness_reports_missing_when_index_absent(client, monkeypatch, tmp_path):
+    missing_path = tmp_path / "nonexistent.json"
+    import app.ai.retrieval as ret
+    monkeypatch.setattr(ret, "EMBEDDINGS_FILE", missing_path)
+
+    response = client.get("/ready")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["ready"] is False
+    assert data["clinical_index"] == "missing"
+
+
+def test_privacy_safeguard_logs_char_count_not_patient_query(client, monkeypatch, caplog):
+    monkeypatch.setattr(ai_engine, "search_clinical_guidelines", lambda query, top_k: FAKE_RESULTS)
+    unique_sensitive_text = "SENSITIVE_PATIENT_IDENTIFIER_XYZ123"
+
+    with caplog.at_level("INFO"):
+        response = client.post("/chat", json={"message": unique_sensitive_text})
+
+    assert response.status_code == 200
+    # The sensitive clinical query itself must never appear in application logs
+    assert unique_sensitive_text not in caplog.text
+    # But operational metadata (query_chars) must be safely logged
+    assert f"query_chars={len(unique_sensitive_text)}" in caplog.text

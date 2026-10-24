@@ -1,4 +1,8 @@
 """HTTP API for evidence-grounded clinical guideline consultation."""
+from __future__ import annotations
+
+import logging
+import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -6,12 +10,23 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.core.ai_engine import generate_health_response
 
+logger = logging.getLogger("caafi_ai.consultation")
+
 router = APIRouter(tags=["consultation"])
 
 
 class ConsultationRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=2000, description="Question or symptom description")
-    language: str = Field(default="en", min_length=2, max_length=20)
+    message: str = Field(
+        min_length=1,
+        max_length=2000,
+        description="Clinical inquiry or symptom description to retrieve evidence for",
+    )
+    language: str = Field(
+        default="en",
+        min_length=2,
+        max_length=20,
+        description="Language code for the response (currently 'en' supported)",
+    )
 
     @field_validator("language")
     @classmethod
@@ -49,9 +64,24 @@ class ConsultationResponse(BaseModel):
 
 
 def _consult(request: ConsultationRequest) -> dict[str, Any]:
+    # Privacy safeguard: Log message length and language only, NEVER patient text.
+    logger.info(
+        "Processing consultation request: language=%s, query_chars=%d",
+        request.language,
+        len(request.message),
+    )
+    start_time = time.perf_counter()
     try:
-        return generate_health_response(request.message, request.language)
+        result = generate_health_response(request.message, request.language)
+        elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+        logger.info(
+            "Consultation completed: retrieved_sources=%d, duration_ms=%.1f",
+            len(result.get("sources", [])),
+            elapsed_ms,
+        )
+        return result
     except FileNotFoundError as exc:
+        logger.warning("Clinical guideline index is unavailable.")
         raise HTTPException(
             status_code=503,
             detail=(
@@ -60,8 +90,10 @@ def _consult(request: ConsultationRequest) -> dict[str, Any]:
             ),
         ) from exc
     except RuntimeError as exc:
+        logger.error("Runtime error during consultation: %s", type(exc).__name__)
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ValueError as exc:
+        logger.warning("Validation error during consultation: %s", type(exc).__name__)
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
