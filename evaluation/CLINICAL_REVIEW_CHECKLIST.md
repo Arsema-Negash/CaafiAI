@@ -1,6 +1,6 @@
 # Clinical Review Checklist (Pending Human Review)
 
-**Status:** Draft engineering checklist only. **No clinician has signed this off.**  
+**Status:** Draft engineering checklist only. **No clinician has signed this off.**
 Do not treat any retrieval evaluation metric as clinical validation.
 
 This checklist is intended for a qualified clinician (or clinical governance process) reviewing CAAFI_AI against an authorized, current clinical guideline source.
