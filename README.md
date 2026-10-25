@@ -1,6 +1,6 @@
 # CAAFI_AI — Clinical Guideline Retrieval MVP
 
-CAAFI_AI is an early research prototype intended to make trusted health information easier to access. This repository currently implements a **source-linked clinical-guideline retrieval API** using the Ethiopian Primary Health Care Clinical Guidelines (2017).
+CAAFI_AI is an early research prototype intended to make trusted health information easier to access. It combines a source-linked clinical-guideline retrieval API with an experimental **browser-simulated voice consultation** using adapted Ethio-HealthBridge speech components and optional Gemini-grounded answer generation.
 
 > **Safety notice:** This is not a medical device, a diagnostic system, or a validated triage tool. It does not assess clinical urgency and must not be used as a substitute for a qualified health professional. The guideline is from 2017; confirm that it remains appropriate before any real-world use. For a possible emergency, seek urgent medical care.
 
@@ -12,21 +12,20 @@ CAAFI_AI is an early research prototype intended to make trusted health informat
 - In-memory chunk and mtime-aware index caching for fast retrieval.
 - Fast, local-cached SentenceTransformer loading with offline resilience.
 - Retrieve semantically similar passages, with light topic/population ranking adjustments.
-- Serve `GET /`, `GET /health`, `GET /ready`, `POST /chat`, and `POST /api/consultation` through FastAPI.
-- Return retrieved passages and source/page metadata, with the response body quoting those passages only. Passages below the configured cosine-similarity floor are withheld (`evidence_status: "insufficient"`). The API deliberately does **not** invent a diagnosis or claim to assess urgency.
-- Safe structured logging without logging patient query contents or sensitive clinical inputs.
-- Run automated tests (`pytest`) for the API contract, retrieval ranking, chunk boundaries, text cleanup, and privacy logging.
-- Evaluate retrieval quality against a draft labeled set plus robustness queries (`python -m app.ai.evaluate_retrieval`).
+- Serve the original guideline consultation API and the new `/api/call/text`, `/api/call/voice`, and `/api/call/audio/{filename}` endpoints.
+- Retrieve source-linked passages from the existing local guideline index, skip obvious table-of-contents chunks, and optionally ask Gemini to explain only those passages. A basic guard rejects unsupported explicit page citations and dosage amounts; it is not a semantic proof. If generation is unavailable for English, use a clearly labelled extractive fallback.
+- Adapt Ethio-HealthBridge's Gemini speech transcription, `edge-tts`/gTTS speech synthesis, and keyword red-flag detection for the simulated-call experience.
+- Display a responsive phone-call UI with recording, mute, hang-up, timer, transcript, answer, source panel, audio replay, and typed fallback.
+- Run automated tests (`pytest`) for the API contracts, retrieval ranking, grounded prompt construction, mocked audio turns, emergency short-circuit, and upload validation.
 
-## Not implemented yet
+## Still limited / not clinically validated
 
-- A generative LLM that rewrites answers (the API only quotes retrieved passages; it does not generate new clinical prose).
-- Clinically validated emergency triage, diagnosis, or treatment recommendations.
-- Amharic and other language generation, language identification, or local-slang normalization.
-- SMS, telephone, speech-to-text, or text-to-speech integration.
-- Production deployment, authentication, monitoring, and clinical evaluation.
+- Real Amharic speech, translation, Gemini generation, and TTS require credentials/network access and must be verified on the target laptop.
+- The red-flag detector is a keyword rule, not a clinically validated triage model; it may miss or over-trigger on symptoms.
+- The bundled guideline is from 2017 and may not represent current practice.
+- Production deployment, authentication, clinical review, and clinical evaluation are out of scope.
 
-These require additional engineering, external service configuration where applicable, and clinical review. Do not describe the current prototype as production-ready.
+Do not describe the current prototype as production-ready or clinically validated.
 
 ## Project layout
 
@@ -67,15 +66,23 @@ Settings are centrally managed in `app/core/config.py` with environment variable
 | `MIN_SEMANTIC_SCORE` | `0.25` | Minimum cosine similarity required to return a passage (engineering abstention floor, not clinical validation) |
 | `EMBEDDING_MODEL_NAME` | `all-MiniLM-L6-v2` | Local sentence-transformers model used for both document and query embeddings |
 | `GUIDELINE_SOURCE_NAME` | `Ethiopian Primary Health Care Clinical Guidelines, 2017` | Source label stored on each chunk |
+| `GEMINI_API_KEY` | unset | Enables cloud STT, Amharic query translation, and grounded answer generation for the call MVP |
+| `GOOGLE_API_KEY` | unset | Compatibility alias for `GEMINI_API_KEY` |
+| `GEMINI_MODEL` | `gemini-2.5-flash-lite` | Gemini model used by generation and translation |
+| `ENABLE_GENERATIVE` | `true` | Set `false` to disable Gemini answer generation |
+| `MAX_GENERATION_TOKENS` | `512` | Maximum configured generated output tokens |
 
 ## Models actually used
 
-There is **no generative language model** in this repository. Consultation answers are extractive quotes of retrieved guideline chunks.
+The project now has an optional generative layer after local guideline retrieval. It is not guaranteed to be factually correct and must be clinically reviewed.
 
-| Role | Model | Provider / runtime | Network / keys |
+| Role | Model / component | Provider / runtime | Network / keys |
 |---|---|---|---|
-| Query and document embeddings | `all-MiniLM-L6-v2` (384-dimensional) | `sentence-transformers` on local CPU/GPU via PyTorch | First load may download weights from Hugging Face if they are not already cached. Later loads use `local_files_only=True` when possible. **No API key.** |
-| Answer generation | None | Extractive quoting in `app/core/ai_engine.py` | Offline |
+| Query and document embeddings | `all-MiniLM-L6-v2` (384-dimensional) | `sentence-transformers` locally via PyTorch | Model weights must be installed/cached; no API key. |
+| Grounded explanation | `gemini-2.5-flash-lite` by default | Google Gemini; receives retrieved guideline excerpts | `GEMINI_API_KEY`; without it English requests use source excerpts. |
+| Speech-to-text | Gemini audio transcription prompt adapted from Ethio-HealthBridge | Google Gemini | `GEMINI_API_KEY`; network required. |
+| Text-to-speech | `am-ET-MekdesNeural` / `en-US-JennyNeural`, then gTTS fallback | `edge-tts` / gTTS | Network required; no Gemini key for TTS. |
+| Emergency red flags | Local phrase matching adapted from Ethio-HealthBridge | Local Python code, before retrieval/generation | No network/key; not clinically validated. |
 
 The embedding model name is centralized in `app/core/config.py` (`EMBEDDING_MODEL_NAME`). `python -m app.data.build_embeddings` writes that name into a versioned index wrapper. A legacy JSON list of chunks is still loaded so an existing local index keeps working until you rebuild. If a wrapped index names a different model than the app config, retrieval raises an error instead of mixing vector spaces.
 
@@ -193,7 +200,7 @@ Retrieve evidence passages grounded in the clinical guideline.
 }
 ```
 
-The MVP supports English (`"language": "en"`). Messages exceeding 2,000 characters or non-English requests return HTTP 422. If the embedding index is missing, unreadable, built with a different embedding model, or the embedding model fails to load, HTTP 503 is returned with a generic service-unavailable message (internal exception text is not sent to the client). When no passage meets `MIN_SEMANTIC_SCORE`, HTTP 200 is still returned with `evidence_status: "insufficient"`, empty `sources`, and a limitation message that does not reassure the user.
+The legacy `/chat` and `/api/consultation` routes accept English only. The simulated-call `/api/call/text` and `/api/call/voice` routes accept English and Amharic; Amharic translation and generation require `GEMINI_API_KEY`. If the index is missing/unreadable or the embedding model fails to load, the call API returns HTTP 503. When no passage meets `MIN_SEMANTIC_SCORE`, the system reports `evidence_status: "insufficient"` and does not invent evidence.
 
 ## Retrieval Evaluation & Metrics
 
@@ -248,7 +255,120 @@ A structured **pending clinician review** checklist lives at `evaluation/CLINICA
 ## Roadmap
 
 1. Qualified clinician review of guideline currency (post-2017 updates), case evaluations, and expected label mappings.
-2. Add a grounded LLM answer generator only after retrieval, citation, and evaluation quality are measured, and only with prompts that forbid unsupported clinical claims. This MVP must remain extractive until that work is approved.
+2. Evaluate the optional grounded LLM generator against clinician-reviewed cases; keep the extractive fallback and reject unsupported or uncited claims.
 3. Design and clinically evaluate an independent emergency escalation and triage layer.
-4. Add multilingual support (Amharic, Afaan Oromoo, Somali) with fluent clinical translation and validation.
+4. Validate the current Amharic/English voice flow, then consider Afaan Oromoo and Somali only after reliable translation and clinical validation.
 5. Add SMS and telephone channels with appropriate authentication, operational safeguards, and patient privacy controls.
+
+---
+
+## Simulated voice-call MVP (CAAFI_AI integration)
+
+The browser interface at `/app` now simulates a voice consultation. It does not
+place a real telephone call, contact an ambulance, or contact a clinician.
+
+### Request flow
+
+1. The browser requests microphone permission and records one question at a time
+   with `MediaRecorder`; typed questions remain available as a fallback.
+2. `/api/call/voice` uploads a short audio clip to the adapted Ethio-HealthBridge
+   Gemini speech-transcription component. `/api/call/text` accepts typed turns.
+3. A local keyword red-flag check runs before retrieval or answer generation. It
+   returns a caution message only; it is not a validated triage model.
+4. For Amharic questions, Gemini translates the question (including recent
+   patient-turn context) into English for CAAFI_AI's existing English guideline
+   index. The original language is requested for the generated answer. Obvious table-of-contents chunks are excluded from evidence retrieval.
+5. CAAFI_AI retrieves passages from its existing `data/embeddings/clinical_chunks.json`
+   index. Gemini is asked to explain only the retrieved excerpts. If generation
+   is unavailable for English, the application falls back to clearly labelled
+   source excerpts. Amharic consultation fails explicitly if Gemini is unavailable
+   rather than presenting an English fallback as an Amharic answer.
+6. The adapted Ethio-HealthBridge TTS component tries the Amharic `edge-tts`
+   voice (`am-ET-MekdesNeural`) or an English neural voice, then attempts a gTTS
+   fallback. Audio playback is optional; a failed TTS attempt does not replace or
+   fabricate the text response.
+7. The browser shows the transcript, response, source topic/page metadata, and
+   plays the returned audio when the browser allows it. Follow-up context stays
+   in browser memory and is sent with the next request; it is not persisted by
+   the CAAFI_AI server.
+
+### Ethio-HealthBridge reuse and attribution
+
+Adapted components from <https://github.com/Illusionsp/ethio-healthbridge>:
+
+- `backend/core/stt_engine.py`: Gemini audio upload and prompted transcription.
+- `backend/core/tts_engine.py`: `edge-tts` neural voice with gTTS fallback.
+- `backend/utils/emergency.py`: keyword red-flag pattern, extended with English
+  phrases for this demo.
+- `backend/core/rag_engine.py`: its Gemini-grounded RAG approach informed the
+  generation integration, but its Chroma/LlamaIndex store is **not** imported
+  as a second retrieval pipeline. CAAFI_AI keeps its own existing guideline
+  index and passes retrieved evidence to Gemini.
+
+The upstream MIT license and attribution notice are preserved in
+`app/integrations/ethio_healthbridge/LICENSE` and `NOTICE.md`. Vision analysis,
+Telegram doctor alerts, patient-ID memory, and outbreak tracking were not
+integrated. The upstream RAG's empty-store fallback can return a basic LLM answer
+without citations; that behavior was intentionally not reused.
+
+### Setup on Windows
+
+Open **Command Prompt** in the extracted project folder. If the project already
+has a working `.venv`, activate it instead of creating another environment.
+
+```bat
+cd /d "C:\Users\hp\Desktop\Caafi\CaafiAI"
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+copy .env.example .env
+notepad .env
+```
+
+In `.env`, set `GEMINI_API_KEY` to a key from Google AI Studio. `GOOGLE_API_KEY`
+can contain the same key as a compatibility alias. Keep the key in `.env`; never
+paste it into frontend code or commit it. Gemini is required for cloud speech
+transcription, Amharic-to-English query translation, and generative explanations.
+The gTTS/edge-tts services also require network access. No key is required for
+local retrieval alone, but the extractive fallback may be less conversational.
+
+Run the test suite and server:
+
+```bat
+python -m pytest -v
+python -m uvicorn app.main:app --reload
+```
+
+Open the interface at **<http://127.0.0.1:8000/app>**. API docs are at
+<http://127.0.0.1:8000/docs>. Browser microphone access normally requires
+`localhost` or HTTPS. If permission is blocked, use the typed-input fallback.
+
+### Voice-call API contracts
+
+- `POST /api/call/text` — JSON: `{"message":"...","language":"en|am","history":[{"role":"user|assistant","content":"..."}]}`.
+- `POST /api/call/voice` — multipart fields: `audio` (browser audio clip),
+  `language` (`am` or `en`), and `history_json` (JSON list of up to six turns).
+- `GET /api/call/audio/{filename}` — serves only generated response MP3s.
+
+The voice endpoint rejects unsupported media types and audio over 15 MB. Audio
+uploads are written to a temporary file and deleted after processing. Generated
+MP3s are stored under `data/audio_outputs/`; they are runtime artifacts and must
+not be committed. A browser refresh clears the in-browser conversation history.
+
+### Honest limitations before a live demonstration
+
+- The bundled clinical guideline is the **2017** Ethiopian Primary Health Care
+  Clinical Guidelines. This app does not establish that it is current or
+  clinically validated.
+- The Amharic STT, Gemini answer generation, Amharic translation, and speech
+  synthesis require live network/provider access and must be tested with a real
+  key on the target Windows laptop.
+- The current environment used for this code pass did not have
+  `sentence-transformers` installed, so real semantic retrieval could not run
+  here. Install the project requirements and verify several distinct questions
+  before presenting the MVP as a working end-to-end voice consultation.
+- The emergency detector is keyword-based, may miss symptoms or flag negated
+  phrases, and is not a validated clinical classifier. It does not call 912 or
+  any other emergency service.
+- Automated tests mock cloud transcription, generation, and TTS. They verify API
+  contracts and fallback behavior, not the accuracy of real AI outputs.

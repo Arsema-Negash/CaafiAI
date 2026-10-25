@@ -116,6 +116,28 @@ URGENCY_QUERY_TERMS = (
     "urgently",
 )
 
+# Generic demographic/system background can score highly without answering a
+# symptom question. This is a ranking penalty, not a hard filter.
+_GENERIC_BACKGROUND_MARKERS = (
+    "population of the country",
+    "population lives in",
+    "the majority of the population",
+    "population distribution",
+    "demographic characteristics",
+    "health system in ethiopia",
+    "ethiopian population",
+)
+
+def is_generic_background_passage(content: str) -> bool:
+    content_lower = content.lower()
+    return any(marker in content_lower for marker in _GENERIC_BACKGROUND_MARKERS)
+
+
+def is_table_of_contents_passage(content: str) -> bool:
+    """Identify index/navigation chunks that should not be cited as clinical guidance."""
+    content_lower = content.lower()
+    return "adult contents:" in content_lower or "child contents:" in content_lower
+
 SYMPTOM_URGENT_HEADINGS = (
     "give urgent attention to the patient with",
     "give urgent attention to the child with",
@@ -170,6 +192,9 @@ def ranking_adjustments(
     if topic in relevant_topics:
         adjustment += 0.08
 
+    if relevant_topics and is_generic_background_passage(chunk.get("content", "")):
+        adjustment -= 0.25
+
     if population_hint is not None:
         population = chunk.get("population")
         if population == population_hint:
@@ -217,6 +242,10 @@ def search_clinical_guidelines(
     results = []
 
     for chunk in chunks:
+        # The source PDF contains table-of-contents pages with symptom names and
+        # page numbers. Those are navigation, not clinical evidence.
+        if is_table_of_contents_passage(chunk.get("content", "")):
+            continue
         chunk_embedding = np.asarray(
             chunk["embedding"],
             dtype=np.float32,
