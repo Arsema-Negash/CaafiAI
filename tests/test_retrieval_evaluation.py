@@ -16,9 +16,11 @@ CASES = [
 def test_draft_dataset_loads_and_stays_marked_for_clinical_review():
     dataset, cases = load_cases(DRAFT_DATASET)
     assert dataset["status"] == "draft_needs_clinical_review"
-    assert len(cases) >= 15
+    core = [case for case in cases if case.get("suite", "core") == "core"]
+    assert len(core) == 15
     adult_cough = next(case for case in cases if case["id"] == "adult_cough")
     assert adult_cough["expected_topic"] == "Breathing difficulty"
+    assert any(case["id"] == "out_of_scope_geography" for case in cases)
 
 
 def test_evaluation_calculates_topic_population_and_joint_hits():
@@ -71,6 +73,33 @@ def test_load_cases_rejects_missing_fields(tmp_path):
     path = tmp_path / "cases.json"
     path.write_text('{"cases":[{"id":"x","query":"q","expected_topic":"Fever"}]}', encoding="utf-8")
     with pytest.raises(ValueError, match="missing required fields"):
+        load_cases(path)
+
+
+def test_insufficient_evidence_cases_are_scored_separately():
+    mixed = [
+        {"id": "child_fever", "query": "fever in a child", "expected_topic": "Fever", "expected_population": "Child"},
+        {"id": "taxes", "query": "how to file taxes", "case_type": "insufficient_evidence"},
+    ]
+    report = evaluate_cases(
+        mixed,
+        lambda query, top_k: (
+            [{"topic": "Fever", "population": "Child"}] if "fever" in query else []
+        ),
+        ks=(3,),
+    )
+    assert report["metrics"]["label_match_case_count"] == 1
+    assert report["metrics"]["insufficient_evidence"]["withheld_rate"] == 1.0
+    assert report["metrics"]["insufficient_evidence"]["cases_that_still_returned_passages"] == []
+
+
+def test_load_cases_rejects_unknown_case_type(tmp_path):
+    path = tmp_path / "cases.json"
+    path.write_text(
+        '{"cases":[{"id":"x","query":"q","case_type":"made_up"}]}',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unknown case_type"):
         load_cases(path)
 
 

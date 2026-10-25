@@ -194,6 +194,69 @@ def test_infer_population_hint_neutral_when_both_present():
     assert retrieval.infer_population_hint("general headache") is None
 
 
+def test_legacy_list_and_wrapped_index_formats_are_parsed():
+    chunks, meta = retrieval.parse_embeddings_payload([{"id": 1}])
+    assert chunks == [{"id": 1}]
+    assert meta["legacy_list"] is True
+
+    chunks, meta = retrieval.parse_embeddings_payload({
+        "index_format_version": 1,
+        "embedding_model": "all-MiniLM-L6-v2",
+        "chunks": [{"id": 2}],
+    })
+    assert chunks == [{"id": 2}]
+    assert meta["legacy_list"] is False
+    assert meta["embedding_model"] == "all-MiniLM-L6-v2"
+
+
+def test_wrapped_index_rejects_mismatched_embedding_model(tmp_path, monkeypatch):
+    index = tmp_path / "chunks.json"
+    index.write_text(
+        json.dumps({
+            "index_format_version": 1,
+            "embedding_model": "other-model",
+            "chunks": [{
+                "id": 1,
+                "topic": "Fever",
+                "population": "Child",
+                "page": 135,
+                "source": "Test",
+                "content": "Fever",
+                "embedding": [1.0, 0.0],
+            }],
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(retrieval, "EMBEDDINGS_FILE", index)
+    monkeypatch.setattr(retrieval, "get_model", lambda: FakeModel())
+    with pytest.raises(RuntimeError, match="different embedding"):
+        retrieval.search_clinical_guidelines("fever", top_k=1)
+
+
+def test_low_similarity_results_are_withheld(tmp_path, monkeypatch):
+    _write_index(
+        tmp_path,
+        monkeypatch,
+        [
+            {
+                "id": 1,
+                "topic": "Fever",
+                "population": "Child",
+                "page": 135,
+                "source": "Test guideline",
+                "content": "Unrelated enough that the fake query vector does not match",
+                "embedding": [0.0, 1.0],
+            }
+        ],
+    )
+    results = retrieval.search_clinical_guidelines(
+        "fever in a child",
+        top_k=3,
+        min_semantic_score=0.25,
+    )
+    assert results == []
+
+
 def test_retrieval_reloads_when_embeddings_file_is_updated(tmp_path, monkeypatch):
     index1 = tmp_path / "chunks1.json"
     index1.write_text(

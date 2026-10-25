@@ -41,4 +41,6 @@ For each evaluation case in `evaluation/retrieval_cases.json` and for a broader 
 
 - Metrics in `reports/retrieval-evaluation.json` measure **metadata label agreement only**.
 - They do **not** measure clinical correctness, completeness, or safety.
+- Dataset version 2 adds robustness queries (paraphrase, typos, out-of-scope). Those are engineering checks. They do not replace this checklist.
 - The API never invents diagnoses; it returns retrieved passages or a clear limitation.
+- `evidence_status` is `retrieved` or `insufficient`. It is not a clinical urgency score.

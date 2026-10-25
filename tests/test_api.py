@@ -35,7 +35,9 @@ def test_health_endpoint(client):
 def test_readiness_endpoint_has_boolean(client):
     response = client.get("/ready")
     assert response.status_code == 200
-    assert isinstance(response.json()["ready"], bool)
+    body = response.json()
+    assert isinstance(body["ready"], bool)
+    assert body["embedding_model"] == "all-MiniLM-L6-v2"
 
 
 def test_consultation_returns_source_linked_evidence(client, monkeypatch):
@@ -50,6 +52,7 @@ def test_consultation_returns_source_linked_evidence(client, monkeypatch):
     body = response.json()
     assert body["severity"] == "not_assessed"
     assert body["urgent"] is None
+    assert body["evidence_status"] == "retrieved"
     assert body["sources"][0]["page"] == 135
     assert body["sources"][0]["source"].startswith("Ethiopian Primary")
     assert "not a diagnosis" in body["response"]
@@ -94,6 +97,7 @@ def test_chat_endpoint_returns_evidence_and_does_not_assess_urgency(client, monk
     body = response.json()
     assert body["urgent"] is None
     assert body["severity"] == "not_assessed"
+    assert body["evidence_status"] == "retrieved"
     assert len(body["sources"]) == 1
     assert body["sources"][0]["page"] == 135
 
@@ -120,7 +124,8 @@ def test_runtime_error_returns_service_unavailable(client, monkeypatch):
     monkeypatch.setattr(ai_engine, "search_clinical_guidelines", boom)
     response = client.post("/chat", json={"message": "fever in an adult"})
     assert response.status_code == 503
-    assert "Sentence transformer" in response.json()["detail"]
+    assert response.json()["detail"] == "The retrieval service is temporarily unavailable."
+    assert "Sentence transformer" not in response.json()["detail"]
 
 
 def test_readiness_reports_missing_when_index_absent(client, monkeypatch, tmp_path):
@@ -133,6 +138,30 @@ def test_readiness_reports_missing_when_index_absent(client, monkeypatch, tmp_pa
     data = response.json()
     assert data["ready"] is False
     assert data["clinical_index"] == "missing"
+
+
+def test_malformed_json_is_rejected(client):
+    response = client.post(
+        "/chat",
+        content="{not-json",
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 422
+
+
+def test_empty_retrieval_does_not_claim_diagnosis_or_urgency(client, monkeypatch):
+    monkeypatch.setattr(ai_engine, "search_clinical_guidelines", lambda query, top_k: [])
+    response = client.post("/chat", json={"message": "What is the capital of France?"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["evidence_status"] == "insufficient"
+    assert body["sources"] == []
+    assert body["severity"] == "not_assessed"
+    assert body["urgent"] is None
+    assert "could not retrieve" in body["response"].lower()
+    lowered = (body["response"] + body["disclaimer"]).lower()
+    assert "confirmed diagnosis" not in lowered
+    assert "you have been diagnosed" not in lowered
 
 
 def test_privacy_safeguard_logs_char_count_not_patient_query(client, monkeypatch, caplog):

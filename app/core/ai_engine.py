@@ -77,11 +77,13 @@ def generate_health_response(message: str, language: str = "en") -> dict[str, An
         for result in results
     ]
 
+    evidence_status = "retrieved" if sources else "insufficient"
     return {
         "response": compose_extractive_response(sources),
         "language": language,
         "severity": "not_assessed",
         "urgent": None,
+        "evidence_status": evidence_status,
         "sources": sources,
         "disclaimer": DISCLAIMER,
     }

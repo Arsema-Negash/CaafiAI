@@ -60,6 +60,7 @@ class ConsultationResponse(BaseModel):
     language: str
     severity: str
     urgent: bool | None
+    evidence_status: str
     sources: list[SourceReference]
     disclaimer: str
 
@@ -92,7 +93,10 @@ def _consult(request: ConsultationRequest) -> dict[str, Any]:
         ) from exc
     except RuntimeError as exc:
         logger.error("Runtime error during consultation: %s", type(exc).__name__)
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=503,
+            detail="The retrieval service is temporarily unavailable.",
+        ) from exc
     except ValueError as exc:
         logger.warning("Validation error during consultation: %s", type(exc).__name__)
         raise HTTPException(status_code=422, detail=str(exc)) from exc

@@ -1,6 +1,6 @@
 {
   "dataset_name": "CAAFI_AI retrieval evaluation draft",
-  "dataset_version": 1,
+  "dataset_version": 2,
   "status": "draft_needs_clinical_review",
   "source_guideline": "Ethiopian Primary Health Care Clinical Guidelines, 2017",
   "safety_note": "This is an engineering evaluation draft, not a clinically validated gold set. Expected topic and population labels are provisional metadata targets. A qualified clinical reviewer must verify each query and expected label against an authorized, current guideline before results are used to make clinical claims.",
@@ -19,6 +19,11 @@
     {"id": "child_abdominal_pain", "query": "What guidance is relevant to abdominal pain in a child?", "expected_topic": "Abdominal pain", "expected_population": "Child"},
     {"id": "adult_diarrhoea", "query": "Which guideline section covers diarrhoea in an adult?", "expected_topic": "Diarrhoea", "expected_population": "Adult"},
     {"id": "child_emergency", "query": "What are the general emergency danger signs for a child?", "expected_topic": "Emergency patient", "expected_population": "Child"},
-    {"id": "adult_emergency", "query": "What are the general emergency danger signs for an adult patient?", "expected_topic": "Emergency patient", "expected_population": "Adult"}
+    {"id": "adult_emergency", "query": "What are the general emergency danger signs for an adult patient?", "expected_topic": "Emergency patient", "expected_population": "Adult"},
+    {"id": "child_fever_paraphrase", "suite": "robustness", "query": "My kid has a high temperature. What does the guideline say?", "expected_topic": "Fever", "expected_population": "Child"},
+    {"id": "child_fever_typo", "suite": "robustness", "query": "fevre in a chld", "expected_topic": "Fever", "expected_population": "Child"},
+    {"id": "adult_cough_reworded", "suite": "robustness", "query": "coughing a lot as an adult, which section should I read?", "expected_topic": "Breathing difficulty", "expected_population": "Adult", "label_note": "Same clinical intent as adult_cough, different wording."},
+    {"id": "out_of_scope_windows_password", "suite": "robustness", "case_type": "insufficient_evidence", "query": "How do I reset a forgotten Windows password?"},
+    {"id": "out_of_scope_geography", "suite": "robustness", "case_type": "insufficient_evidence", "query": "What is the capital of France?"}
   ]
 }

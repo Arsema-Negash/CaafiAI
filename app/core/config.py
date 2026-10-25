@@ -28,6 +28,18 @@ class Settings:
         self.default_top_k: int = int(os.getenv("DEFAULT_TOP_K", "3"))
         self.max_top_k: int = int(os.getenv("MAX_TOP_K", "10"))
         self.max_message_length: int = int(os.getenv("MAX_MESSAGE_LENGTH", "2000"))
+        # Floor for semantic cosine similarity. Historical core-eval rank-1 scores
+        # were at least ~0.37; 0.25 is an engineering abstention floor, not a
+        # clinical relevance threshold.
+        self.min_semantic_score: float = float(os.getenv("MIN_SEMANTIC_SCORE", "0.25"))
+
+        # Embedding model (local sentence-transformers). Must match the index.
+        self.embedding_model_name: str = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
+        self.index_format_version: int = int(os.getenv("INDEX_FORMAT_VERSION", "1"))
+        self.guideline_source_name: str = os.getenv(
+            "GUIDELINE_SOURCE_NAME",
+            "Ethiopian Primary Health Care Clinical Guidelines, 2017",
+        )
 
 
 settings = Settings()

@@ -1,10 +1,8 @@
-from pathlib import Path
 import re
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
+from app.core.config import settings
 
-SOURCE_NAME = "Ethiopian Primary Health Care Clinical Guidelines, 2017"
+SOURCE_NAME = settings.guideline_source_name
 
 TOPIC_ALIASES = {
     "emergency patient": "Emergency patient",
@@ -42,7 +40,7 @@ TOPIC_ALIASES = {
 
 
 def load_processed_document() -> str:
-    files = sorted(PROCESSED_DATA_DIR.glob("*.txt"))
+    files = sorted(settings.processed_data_dir.glob("*.txt"))
     files = [file for file in files if file.name != "chunks.txt"]
 
     if not files:

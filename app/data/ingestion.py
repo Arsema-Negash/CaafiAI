@@ -1,10 +1,7 @@
 from pathlib import Path
 from pypdf import PdfReader
 
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw"
-PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
+from app.core.config import settings
 
 
 def extract_text_from_pdf(pdf_path: Path) -> str:
@@ -54,9 +51,9 @@ def clean_text(text: str) -> str:
 def save_processed_text(text: str, filename: str) -> Path:
     """Save processed document text."""
 
-    PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    settings.processed_data_dir.mkdir(parents=True, exist_ok=True)
 
-    output_path = PROCESSED_DATA_DIR / filename
+    output_path = settings.processed_data_dir / filename
 
     output_path.write_text(
         text,
@@ -81,10 +78,11 @@ def process_pdf(pdf_path: Path) -> Path:
     )
 
 if __name__ == "__main__":
-    pdf_files = sorted(RAW_DATA_DIR.glob("*.pdf"))
+    pdf_files = sorted(settings.raw_data_dir.glob("*.pdf"))
     if not pdf_files:
         raise FileNotFoundError(
-            f"No PDF files found in {RAW_DATA_DIR}. Copy the authorized clinical guideline PDF there first."
+            f"No PDF files found in {settings.raw_data_dir}. "
+            "Copy the authorized clinical guideline PDF there first."
         )
     for pdf_file in pdf_files:
         output_file = process_pdf(pdf_file)

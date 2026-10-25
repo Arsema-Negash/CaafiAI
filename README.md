@@ -13,10 +13,10 @@ CAAFI_AI is an early research prototype intended to make trusted health informat
 - Fast, local-cached SentenceTransformer loading with offline resilience.
 - Retrieve semantically similar passages, with light topic/population ranking adjustments.
 - Serve `GET /`, `GET /health`, `GET /ready`, `POST /chat`, and `POST /api/consultation` through FastAPI.
-- Return retrieved passages and source/page metadata, with the response body quoting those passages only. The API deliberately does **not** invent a diagnosis or claim to assess urgency.
+- Return retrieved passages and source/page metadata, with the response body quoting those passages only. Passages below the configured cosine-similarity floor are withheld (`evidence_status: "insufficient"`). The API deliberately does **not** invent a diagnosis or claim to assess urgency.
 - Safe structured logging without logging patient query contents or sensitive clinical inputs.
 - Run automated tests (`pytest`) for the API contract, retrieval ranking, chunk boundaries, text cleanup, and privacy logging.
-- Evaluate retrieval quality against a draft 15-case test set (`python -m app.ai.evaluate_retrieval`).
+- Evaluate retrieval quality against a draft labeled set plus robustness queries (`python -m app.ai.evaluate_retrieval`).
 
 ## Not implemented yet
 
@@ -64,6 +64,22 @@ Settings are centrally managed in `app/core/config.py` with environment variable
 | `DEFAULT_TOP_K` | `3` | Default number of evidence chunks returned |
 | `MAX_TOP_K` | `10` | Maximum allowable `top_k` results |
 | `MAX_MESSAGE_LENGTH` | `2000` | Maximum character length for consultation queries |
+| `MIN_SEMANTIC_SCORE` | `0.25` | Minimum cosine similarity required to return a passage (engineering abstention floor, not clinical validation) |
+| `EMBEDDING_MODEL_NAME` | `all-MiniLM-L6-v2` | Local sentence-transformers model used for both document and query embeddings |
+| `GUIDELINE_SOURCE_NAME` | `Ethiopian Primary Health Care Clinical Guidelines, 2017` | Source label stored on each chunk |
+
+## Models actually used
+
+There is **no generative language model** in this repository. Consultation answers are extractive quotes of retrieved guideline chunks.
+
+| Role | Model | Provider / runtime | Network / keys |
+|---|---|---|---|
+| Query and document embeddings | `all-MiniLM-L6-v2` (384-dimensional) | `sentence-transformers` on local CPU/GPU via PyTorch | First load may download weights from Hugging Face if they are not already cached. Later loads use `local_files_only=True` when possible. **No API key.** |
+| Answer generation | None | Extractive quoting in `app/core/ai_engine.py` | Offline |
+
+The embedding model name is centralized in `app/core/config.py` (`EMBEDDING_MODEL_NAME`). `python -m app.data.build_embeddings` writes that name into a versioned index wrapper. A legacy JSON list of chunks is still loaded so an existing local index keeps working until you rebuild. If a wrapped index names a different model than the app config, retrieval raises an error instead of mixing vector spaces.
+
+Rebuilding the index is required after changing `EMBEDDING_MODEL_NAME`. Do not treat MiniLM retrieval quality as clinical accuracy.
 
 ## Setup on Windows CMD
 
@@ -75,6 +91,8 @@ py -3.13 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements-dev.txt
 ```
+
+If this virtual environment already existed, run the install command again so the test extra `httpx2` is present. That package is used only by Starlette's test client.
 
 Copy the authorized clinical guideline PDF into `data\raw\`. The PDF is intentionally excluded from Git; do not commit clinical source documents or generated indexes unless you have explicit permission and a reviewed data policy.
 
@@ -136,7 +154,7 @@ Confirms the API process is running and responding (status 200).
 
 ### `GET /ready`
 
-Reports whether the clinical knowledge index exists on disk (`ready: true/false`, `clinical_index: "available"/"missing"`).
+Reports whether the clinical knowledge index exists on disk (`ready: true/false`, `clinical_index: "available"/"missing"`) and echoes the configured `embedding_model`.
 
 ### `POST /api/consultation` or `POST /chat`
 
@@ -159,6 +177,7 @@ Retrieve evidence passages grounded in the clinical guideline.
   "language": "en",
   "severity": "not_assessed",
   "urgent": null,
+  "evidence_status": "retrieved",
   "sources": [
     {
       "id": 361,
@@ -174,7 +193,7 @@ Retrieve evidence passages grounded in the clinical guideline.
 }
 ```
 
-The MVP supports English (`"language": "en"`). Messages exceeding 2,000 characters or non-English requests return HTTP 422. If the embedding index is missing or the embedding model fails, HTTP 503 is returned.
+The MVP supports English (`"language": "en"`). Messages exceeding 2,000 characters or non-English requests return HTTP 422. If the embedding index is missing, unreadable, built with a different embedding model, or the embedding model fails to load, HTTP 503 is returned with a generic service-unavailable message (internal exception text is not sent to the client). When no passage meets `MIN_SEMANTIC_SCORE`, HTTP 200 is still returned with `evidence_status: "insufficient"`, empty `sources`, and a limitation message that does not reassure the user.
 
 ## Retrieval Evaluation & Metrics
 
@@ -186,15 +205,24 @@ Run evaluation:
 python -m app.ai.evaluate_retrieval --output reports/retrieval-evaluation.json
 ```
 
-### Evaluation Results (15 Draft Cases)
+### Evaluation Results (measured 2026-10-25, local MiniLM index)
 
-| Metric | Historical Baseline | Current Verified Result |
+Method: `python -m app.ai.evaluate_retrieval` against the local 454-chunk index, model `all-MiniLM-L6-v2`, `MIN_SEMANTIC_SCORE=0.25`, cutoffs k=3 and k=5. Label hits are metadata agreement only.
+
+| Metric | Historical core baseline | Measured now |
 |---|---|---|
-| **Topic label hit rate @ 3** | 0.8000 (12/15) | **1.0000 (15/15)** |
-| **Population label hit rate @ 3** | 1.0000 (15/15) | **1.0000 (15/15)** |
-| **Joint Topic/Population hit rate @ 3** | 0.8000 (12/15) | **1.0000 (15/15)** |
-| **Joint Mean Reciprocal Rank (MRR)** | 0.8000 | **1.0000** |
-| **Missed cases** | `adult_cough`, `child_wheeze`, `child_emergency` | **None (0 missed)** |
+| **Core joint topic/population hit rate @ 3** (15 original IDs) | 0.8000 (12/15) | **1.0000 (15/15)** |
+| **All label-match joint hit rate @ 3** (18 queries, includes paraphrase/typo) | n/a | **0.9444 (17/18)** |
+| **Missed label-match IDs** | `adult_cough`, `child_wheeze`, `child_emergency` | **`child_fever_typo` only** |
+| **Out-of-scope withheld rate** (2 queries) | n/a | **1.0000 (2/2)** |
+
+Robustness notes from this run:
+
+- `child_fever_paraphrase` and `adult_cough_reworded` jointly hit at rank 1.
+- `child_fever_typo` (`fevre in a chld`) returned **no** passages above the 0.25 floor (abstention, not a wrong-topic ranking). That is safer than a confident mismatch, but it is not spelling-tolerant retrieval.
+- `out_of_scope_windows_password` and `out_of_scope_geography` were fully withheld.
+
+Do not treat these numbers as clinical accuracy. Re-run locally after changing the index, model, or threshold.
 
 ### Root-Cause Fixes
 - `adult_cough`: Mapped to `Breathing difficulty` on page 29 ("Cough or difficulty breathing") in the chunker, matching the guideline structure.
@@ -214,11 +242,13 @@ A structured **pending clinician review** checklist lives at `evaluation/CLINICA
 - **Excluded Data:** The root `data/` directory is excluded from Git to prevent tracking local clinical source documents, extracted text, and embedding indexes.
 - **No Hardcoded Secrets:** No API keys, passwords, or cloud credentials are stored in code. Configuration is loaded via environment variables with safe local defaults.
 - **Offline Capable:** MiniLM embeddings load with `local_files_only=True` when cached, avoiding outbound network requests or timeouts during operation.
+- **CI:** `.github/workflows/ci.yml` runs `python -m pytest` on Python 3.13. That workflow has been added in the repository; it is **not yet verified on GitHub Actions** until a push or pull request runs it.
+- **Test client warning:** Starlette 1.7 still works with `httpx`, but TestClient prefers the `httpx2` package. `httpx2` is a **dev** dependency only so tests can silence that deprecation without changing production HTTP clients.
 
 ## Roadmap
 
 1. Qualified clinician review of guideline currency (post-2017 updates), case evaluations, and expected label mappings.
-2. Add a grounded LLM answer generator that strictly cites retrieved passages without fabricating diagnoses or treatment dosages.
+2. Add a grounded LLM answer generator only after retrieval, citation, and evaluation quality are measured, and only with prompts that forbid unsupported clinical claims. This MVP must remain extractive until that work is approved.
 3. Design and clinically evaluate an independent emergency escalation and triage layer.
 4. Add multilingual support (Amharic, Afaan Oromoo, Somali) with fluent clinical translation and validation.
 5. Add SMS and telephone channels with appropriate authentication, operational safeguards, and patient privacy controls.

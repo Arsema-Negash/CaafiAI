@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -13,6 +14,41 @@ EMBEDDINGS_FILE = settings.embeddings_path
 _cached_chunks: list[dict] | None = None
 _cached_file: Path | None = None
 _cached_mtime: float | None = None
+
+
+def parse_embeddings_payload(raw: object) -> tuple[list[dict], dict[str, Any]]:
+    """Accept the legacy JSON list and the versioned object wrapper."""
+    if isinstance(raw, list):
+        return raw, {
+            "index_format_version": 0,
+            "embedding_model": None,
+            "source": None,
+            "legacy_list": True,
+        }
+    if isinstance(raw, dict):
+        chunks = raw.get("chunks")
+        if not isinstance(chunks, list):
+            raise RuntimeError("The clinical embeddings index is missing a 'chunks' list.")
+        return chunks, {
+            "index_format_version": raw.get("index_format_version"),
+            "embedding_model": raw.get("embedding_model"),
+            "source": raw.get("source"),
+            "legacy_list": False,
+        }
+    raise RuntimeError("The clinical embeddings index must be a JSON list or an object with 'chunks'.")
+
+
+def _assert_embedding_model_compatible(metadata: dict[str, Any]) -> None:
+    index_model = metadata.get("embedding_model")
+    if not index_model:
+        return
+    configured = settings.embedding_model_name
+    if index_model != configured:
+        raise RuntimeError(
+            "The clinical embeddings index was built with a different embedding "
+            f"model ({index_model}) than the one configured ({configured}). "
+            "Rebuild the index with python -m app.data.build_embeddings."
+        )
 
 
 def load_chunks() -> list[dict]:
@@ -36,8 +72,14 @@ def load_chunks() -> list[dict]:
     ):
         return _cached_chunks
 
-    data = json.loads(EMBEDDINGS_FILE.read_text(encoding="utf-8"))
-    _cached_chunks = data
+    try:
+        raw = json.loads(EMBEDDINGS_FILE.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("The clinical embeddings index is unreadable.") from exc
+
+    chunks, metadata = parse_embeddings_payload(raw)
+    _assert_embedding_model_compatible(metadata)
+    _cached_chunks = chunks
     _cached_file = EMBEDDINGS_FILE
     _cached_mtime = current_mtime
     return _cached_chunks
@@ -149,6 +191,7 @@ def ranking_adjustments(
 def search_clinical_guidelines(
     query: str,
     top_k: int = 3,
+    min_semantic_score: float | None = None,
 ) -> list[dict]:
     """Rank guideline chunks using semantic similarity and light topic matching."""
     if not query.strip():
@@ -156,6 +199,10 @@ def search_clinical_guidelines(
 
     if top_k < 1:
         raise ValueError("top_k must be at least 1.")
+
+    threshold = (
+        settings.min_semantic_score if min_semantic_score is None else min_semantic_score
+    )
 
     chunks = load_chunks()
     query_lower = query.lower()
@@ -204,4 +251,7 @@ def search_clinical_guidelines(
         reverse=True,
     )
 
-    return results[:top_k]
+    above_threshold = [
+        item for item in results if item["score"] >= threshold
+    ]
+    return above_threshold[:top_k]

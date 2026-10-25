@@ -67,4 +67,5 @@ def readiness_check() -> dict[str, str | bool]:
     return {
         "ready": ready,
         "clinical_index": "available" if ready else "missing",
+        "embedding_model": settings.embedding_model_name,
     }

@@ -28,8 +28,15 @@ def build_embeddings() -> None:
     for chunk, emb in zip(chunks, embeddings):
         chunk["embedding"] = emb.tolist()
 
+    payload = {
+        "index_format_version": settings.index_format_version,
+        "embedding_model": settings.embedding_model_name,
+        "source": settings.guideline_source_name,
+        "chunk_count": len(chunks),
+        "chunks": chunks,
+    }
     output_file.write_text(
-        json.dumps(chunks, ensure_ascii=False),
+        json.dumps(payload, ensure_ascii=False),
         encoding="utf-8",
     )
 

@@ -31,10 +31,16 @@ def load_cases(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         raise ValueError("Evaluation dataset must contain a non-empty 'cases' list.")
 
     seen_ids: set[str] = set()
-    required = ("id", "query", "expected_topic", "expected_population")
+    allowed_types = {"label_match", "insufficient_evidence"}
     for index, case in enumerate(cases, start=1):
         if not isinstance(case, dict):
             raise ValueError(f"Case {index} must be a JSON object.")
+        case_type = str(case.get("case_type") or "label_match")
+        if case_type not in allowed_types:
+            raise ValueError(f"Case {index} has unknown case_type: {case_type}")
+        required = ("id", "query")
+        if case_type == "label_match":
+            required = ("id", "query", "expected_topic", "expected_population")
         missing = [field for field in required if not str(case.get(field, "")).strip()]
         if missing:
             raise ValueError(f"Case {index} is missing required fields: {', '.join(missing)}")
@@ -61,9 +67,42 @@ def evaluate_cases(
     topic_ranks: list[int | None] = []
     population_ranks: list[int | None] = []
     joint_ranks: list[int | None] = []
+    core_joint_ranks: list[int | None] = []
+    insufficient_total = 0
+    insufficient_withheld = 0
 
     for case in cases:
+        case_type = str(case.get("case_type") or "label_match")
+        suite = str(case.get("suite") or "core")
         results = search_fn(case["query"], top_k=max(ordered_ks))
+        result_summaries = [
+            {
+                "rank": rank,
+                "id": result.get("id"),
+                "topic": result.get("topic"),
+                "population": result.get("population"),
+                "page": result.get("page"),
+                "semantic_score": result.get("score"),
+                "ranking_score": result.get("ranking_score"),
+            }
+            for rank, result in enumerate(results, start=1)
+        ]
+
+        if case_type == "insufficient_evidence":
+            withheld = len(results) == 0
+            insufficient_total += 1
+            if withheld:
+                insufficient_withheld += 1
+            per_case.append({
+                "id": case["id"],
+                "query": case["query"],
+                "case_type": case_type,
+                "suite": suite,
+                "withheld": withheld,
+                "top_results": result_summaries,
+            })
+            continue
+
         expected_topic = case["expected_topic"]
         expected_population = case["expected_population"]
 
@@ -86,19 +125,9 @@ def evaluate_cases(
         topic_ranks.append(topic_rank)
         population_ranks.append(population_rank)
         joint_ranks.append(joint_rank)
+        if suite == "core":
+            core_joint_ranks.append(joint_rank)
 
-        result_summaries = [
-            {
-                "rank": rank,
-                "id": result.get("id"),
-                "topic": result.get("topic"),
-                "population": result.get("population"),
-                "page": result.get("page"),
-                "semantic_score": result.get("score"),
-                "ranking_score": result.get("ranking_score"),
-            }
-            for rank, result in enumerate(results, start=1)
-        ]
         hits = {}
         for k in ordered_ks:
             hits[f"topic_hit_at_{k}"] = topic_rank is not None and topic_rank <= k
@@ -107,6 +136,8 @@ def evaluate_cases(
         per_case.append({
             "id": case["id"],
             "query": case["query"],
+            "case_type": case_type,
+            "suite": suite,
             "expected_topic": expected_topic,
             "expected_population": expected_population,
             "topic_first_rank": topic_rank,
@@ -117,13 +148,20 @@ def evaluate_cases(
         })
 
     def hit_rate(ranks: list[int | None], k: int) -> float:
+        if not ranks:
+            return 0.0
         return sum(rank is not None and rank <= k for rank in ranks) / len(ranks)
 
+    label_count = len(joint_ranks)
     metrics: dict[str, Any] = {
         "case_count": len(cases),
+        "label_match_case_count": label_count,
+        "core_label_match_case_count": len(core_joint_ranks),
         "metrics_note": (
             "Label-hit rates measure agreement with provisional topic/population metadata only; "
-            "they are not clinical relevance, answer correctness, or safety metrics."
+            "they are not clinical relevance, answer correctness, or safety metrics. "
+            "insufficient_evidence cases measure whether retrieval withheld all passages, "
+            "not whether a clinician would consider the query out of scope."
         ),
         "cutoffs": {},
     }
@@ -132,14 +170,25 @@ def evaluate_cases(
             f"topic_label_hit_rate_at_{k}": round(hit_rate(topic_ranks, k), 4),
             f"population_label_hit_rate_at_{k}": round(hit_rate(population_ranks, k), 4),
             f"joint_topic_population_hit_rate_at_{k}": round(hit_rate(joint_ranks, k), 4),
+            f"core_joint_topic_population_hit_rate_at_{k}": round(hit_rate(core_joint_ranks, k), 4),
         }
     metrics["joint_mean_reciprocal_rank"] = round(
-        sum(1 / rank for rank in joint_ranks if rank is not None) / len(cases),
+        (sum(1 / rank for rank in joint_ranks if rank is not None) / label_count) if label_count else 0.0,
         4,
     )
     metrics["cases_with_no_joint_label_match"] = [
-        case["id"] for case in per_case if case["joint_first_rank"] is None
+        case["id"] for case in per_case
+        if case.get("case_type", "label_match") == "label_match" and case.get("joint_first_rank") is None
     ]
+    if insufficient_total:
+        metrics["insufficient_evidence"] = {
+            "case_count": insufficient_total,
+            "withheld_rate": round(insufficient_withheld / insufficient_total, 4),
+            "cases_that_still_returned_passages": [
+                case["id"] for case in per_case
+                if case.get("case_type") == "insufficient_evidence" and not case.get("withheld")
+            ],
+        }
     return {"metrics": metrics, "cases": per_case}
 
 
@@ -167,10 +216,13 @@ def main() -> int:
     print(json.dumps(report["metrics"], indent=2, ensure_ascii=False))
     print("\nPer-case details:")
     for case in report["cases"]:
-        print(
-            f"- {case['id']}: joint rank={case['joint_first_rank']}; "
-            f"expected={case['expected_topic']} / {case['expected_population']}"
-        )
+        if case.get("case_type") == "insufficient_evidence":
+            print(f"- {case['id']}: withheld={case['withheld']}")
+        else:
+            print(
+                f"- {case['id']}: joint rank={case['joint_first_rank']}; "
+                f"expected={case['expected_topic']} / {case['expected_population']}"
+            )
 
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

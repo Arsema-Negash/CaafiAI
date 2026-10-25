@@ -1,26 +1,39 @@
 {
   "metrics": {
-    "case_count": 15,
-    "metrics_note": "Label-hit rates measure agreement with provisional topic/population metadata only; they are not clinical relevance, answer correctness, or safety metrics.",
+    "case_count": 20,
+    "label_match_case_count": 18,
+    "core_label_match_case_count": 15,
+    "metrics_note": "Label-hit rates measure agreement with provisional topic/population metadata only; they are not clinical relevance, answer correctness, or safety metrics. insufficient_evidence cases measure whether retrieval withheld all passages, not whether a clinician would consider the query out of scope.",
     "cutoffs": {
       "3": {
-        "topic_label_hit_rate_at_3": 1.0,
-        "population_label_hit_rate_at_3": 1.0,
-        "joint_topic_population_hit_rate_at_3": 1.0
+        "topic_label_hit_rate_at_3": 0.9444,
+        "population_label_hit_rate_at_3": 0.9444,
+        "joint_topic_population_hit_rate_at_3": 0.9444,
+        "core_joint_topic_population_hit_rate_at_3": 1.0
       },
       "5": {
-        "topic_label_hit_rate_at_5": 1.0,
-        "population_label_hit_rate_at_5": 1.0,
-        "joint_topic_population_hit_rate_at_5": 1.0
+        "topic_label_hit_rate_at_5": 0.9444,
+        "population_label_hit_rate_at_5": 0.9444,
+        "joint_topic_population_hit_rate_at_5": 0.9444,
+        "core_joint_topic_population_hit_rate_at_5": 1.0
       }
     },
-    "joint_mean_reciprocal_rank": 1.0,
-    "cases_with_no_joint_label_match": []
+    "joint_mean_reciprocal_rank": 0.9444,
+    "cases_with_no_joint_label_match": [
+      "child_fever_typo"
+    ],
+    "insufficient_evidence": {
+      "case_count": 2,
+      "withheld_rate": 1.0,
+      "cases_that_still_returned_passages": []
+    }
   },
   "cases": [
     {
       "id": "child_breathing_danger_signs",
       "query": "What danger signs should be assessed in a child with difficulty breathing?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Breathing difficulty",
       "expected_population": "Child",
       "topic_first_rank": 1,
@@ -85,6 +98,8 @@
     {
       "id": "adult_breathing_emergency",
       "query": "What emergency signs matter for an adult with shortness of breath?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Breathing difficulty",
       "expected_population": "Adult",
       "topic_first_rank": 1,
@@ -149,6 +164,8 @@
     {
       "id": "child_cough_breathing",
       "query": "A child has cough and breathing problems. Which guideline section is relevant?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Breathing difficulty",
       "expected_population": "Child",
       "topic_first_rank": 1,
@@ -213,6 +230,8 @@
     {
       "id": "adult_cough",
       "query": "What does the guideline cover for an adult with a cough?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Breathing difficulty",
       "expected_population": "Adult",
       "topic_first_rank": 1,
@@ -277,6 +296,8 @@
     {
       "id": "child_fever",
       "query": "What guideline information applies to a child with fever?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Fever",
       "expected_population": "Child",
       "topic_first_rank": 1,
@@ -341,6 +362,8 @@
     {
       "id": "adult_fever",
       "query": "What should be reviewed for an adult with fever and a high temperature?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Fever",
       "expected_population": "Adult",
       "topic_first_rank": 1,
@@ -405,6 +428,8 @@
     {
       "id": "child_convulsions",
       "query": "What guideline section covers seizures or convulsions in a child?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Convulsions",
       "expected_population": "Child",
       "topic_first_rank": 1,
@@ -469,6 +494,8 @@
     {
       "id": "adult_chest_pain",
       "query": "Which guideline section is relevant to chest pain in an adult?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Chest pain",
       "expected_population": "Adult",
       "topic_first_rank": 1,
@@ -533,6 +560,8 @@
     {
       "id": "child_wheeze",
       "query": "What guidance is relevant when a child has wheezing or a tight chest?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Wheeze/tight chest",
       "expected_population": "Child",
       "topic_first_rank": 1,
@@ -597,6 +626,8 @@
     {
       "id": "adult_dizziness",
       "query": "What section covers dizziness or vertigo in adults?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Dizziness",
       "expected_population": "Adult",
       "topic_first_rank": 1,
@@ -661,6 +692,8 @@
     {
       "id": "adult_headache",
       "query": "Which guideline topic covers headache in an adult?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Headache",
       "expected_population": "Adult",
       "topic_first_rank": 1,
@@ -725,6 +758,8 @@
     {
       "id": "child_abdominal_pain",
       "query": "What guidance is relevant to abdominal pain in a child?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Abdominal pain",
       "expected_population": "Child",
       "topic_first_rank": 1,
@@ -789,6 +824,8 @@
     {
       "id": "adult_diarrhoea",
       "query": "Which guideline section covers diarrhoea in an adult?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Diarrhoea",
       "expected_population": "Adult",
       "topic_first_rank": 1,
@@ -853,6 +890,8 @@
     {
       "id": "child_emergency",
       "query": "What are the general emergency danger signs for a child?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Emergency patient",
       "expected_population": "Child",
       "topic_first_rank": 1,
@@ -917,6 +956,8 @@
     {
       "id": "adult_emergency",
       "query": "What are the general emergency danger signs for an adult patient?",
+      "case_type": "label_match",
+      "suite": "core",
       "expected_topic": "Emergency patient",
       "expected_population": "Adult",
       "topic_first_rank": 1,
@@ -977,11 +1018,179 @@
           "ranking_score": 0.663902153968811
         }
       ]
+    },
+    {
+      "id": "child_fever_paraphrase",
+      "query": "My kid has a high temperature. What does the guideline say?",
+      "case_type": "label_match",
+      "suite": "robustness",
+      "expected_topic": "Fever",
+      "expected_population": "Child",
+      "topic_first_rank": 1,
+      "population_first_rank": 1,
+      "joint_first_rank": 1,
+      "hits": {
+        "topic_hit_at_3": true,
+        "population_hit_at_3": true,
+        "joint_hit_at_3": true,
+        "topic_hit_at_5": true,
+        "population_hit_at_5": true,
+        "joint_hit_at_5": true
+      },
+      "top_results": [
+        {
+          "rank": 1,
+          "id": 401,
+          "topic": "Fever",
+          "population": "Child",
+          "page": 135,
+          "semantic_score": 0.42369309067726135,
+          "ranking_score": 0.5036930906772613
+        },
+        {
+          "rank": 2,
+          "id": 19,
+          "topic": "Fever",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.40848803520202637,
+          "ranking_score": 0.4884880352020264
+        },
+        {
+          "rank": 3,
+          "id": 33,
+          "topic": "Fever",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.40848803520202637,
+          "ranking_score": 0.4884880352020264
+        },
+        {
+          "rank": 4,
+          "id": 44,
+          "topic": "Fever",
+          "population": null,
+          "page": null,
+          "semantic_score": 0.40408408641815186,
+          "ranking_score": 0.48408408641815187
+        },
+        {
+          "rank": 5,
+          "id": 372,
+          "topic": "Fever",
+          "population": "Child",
+          "page": 127,
+          "semantic_score": 0.40408408641815186,
+          "ranking_score": 0.48408408641815187
+        }
+      ]
+    },
+    {
+      "id": "child_fever_typo",
+      "query": "fevre in a chld",
+      "case_type": "label_match",
+      "suite": "robustness",
+      "expected_topic": "Fever",
+      "expected_population": "Child",
+      "topic_first_rank": null,
+      "population_first_rank": null,
+      "joint_first_rank": null,
+      "hits": {
+        "topic_hit_at_3": false,
+        "population_hit_at_3": false,
+        "joint_hit_at_3": false,
+        "topic_hit_at_5": false,
+        "population_hit_at_5": false,
+        "joint_hit_at_5": false
+      },
+      "top_results": []
+    },
+    {
+      "id": "adult_cough_reworded",
+      "query": "coughing a lot as an adult, which section should I read?",
+      "case_type": "label_match",
+      "suite": "robustness",
+      "expected_topic": "Breathing difficulty",
+      "expected_population": "Adult",
+      "topic_first_rank": 1,
+      "population_first_rank": 1,
+      "joint_first_rank": 1,
+      "hits": {
+        "topic_hit_at_3": true,
+        "population_hit_at_3": true,
+        "joint_hit_at_3": true,
+        "topic_hit_at_5": true,
+        "population_hit_at_5": true,
+        "joint_hit_at_5": true
+      },
+      "top_results": [
+        {
+          "rank": 1,
+          "id": 107,
+          "topic": "Breathing difficulty",
+          "population": "Adult",
+          "page": 29,
+          "semantic_score": 0.5272627472877502,
+          "ranking_score": 0.7272627472877502
+        },
+        {
+          "rank": 2,
+          "id": 108,
+          "topic": "Breathing difficulty",
+          "population": "Adult",
+          "page": 29,
+          "semantic_score": 0.48845842480659485,
+          "ranking_score": 0.6884584248065948
+        },
+        {
+          "rank": 3,
+          "id": 244,
+          "topic": "Fever",
+          "population": "Adult",
+          "page": 81,
+          "semantic_score": 0.49977684020996094,
+          "ranking_score": 0.6197768402099609
+        },
+        {
+          "rank": 4,
+          "id": 251,
+          "topic": "Fever",
+          "population": "Adult",
+          "page": 83,
+          "semantic_score": 0.44196629524230957,
+          "ranking_score": 0.5619662952423096
+        },
+        {
+          "rank": 5,
+          "id": 70,
+          "topic": "Convulsions",
+          "population": "Adult",
+          "page": 16,
+          "semantic_score": 0.4242118299007416,
+          "ranking_score": 0.5442118299007416
+        }
+      ]
+    },
+    {
+      "id": "out_of_scope_windows_password",
+      "query": "How do I reset a forgotten Windows password?",
+      "case_type": "insufficient_evidence",
+      "suite": "robustness",
+      "withheld": true,
+      "top_results": []
+    },
+    {
+      "id": "out_of_scope_geography",
+      "query": "What is the capital of France?",
+      "case_type": "insufficient_evidence",
+      "suite": "robustness",
+      "withheld": true,
+      "top_results": []
     }
   ],
   "dataset": {
     "name": "CAAFI_AI retrieval evaluation draft",
-    "version": 1,
+    "version": 2,
     "status": "draft_needs_clinical_review",
     "source_guideline": "Ethiopian Primary Health Care Clinical Guidelines, 2017"
   }
