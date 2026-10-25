@@ -6,6 +6,12 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv(PROJECT_ROOT / ".env")
+except ImportError:
+    pass
+
 
 class Settings:
     """Runtime configuration settings loaded from environment variables."""
@@ -40,6 +46,12 @@ class Settings:
             "GUIDELINE_SOURCE_NAME",
             "Ethiopian Primary Health Care Clinical Guidelines, 2017",
         )
+
+        # Generative LLM settings (optional — falls back to extractive if unset)
+        self.gemini_api_key: str = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY", ""))
+        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+        self.enable_generative: bool = os.getenv("ENABLE_GENERATIVE", "true").lower() == "true"
+        self.max_generation_tokens: int = int(os.getenv("MAX_GENERATION_TOKENS", "512"))
 
 
 settings = Settings()

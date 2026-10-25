@@ -1,10 +1,14 @@
+
 """CAAFI_AI FastAPI application entry point."""
 from contextlib import asynccontextmanager
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 
 from app.api.consultation import router as consultation_router
+from app.api.voice_call import router as voice_call_router
 from app.core.config import settings
 
 logging.basicConfig(
@@ -12,6 +16,9 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger("caafi_ai")
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+INDEX_FILE = STATIC_DIR / "index.html"
 
 
 @asynccontextmanager
@@ -38,6 +45,7 @@ app = FastAPI(
 )
 
 app.include_router(consultation_router)
+app.include_router(voice_call_router)
 
 
 @app.get("/", tags=["system"])
@@ -50,6 +58,19 @@ def root_info() -> dict[str, str]:
         "guideline": "Ethiopian Primary Health Care Clinical Guidelines, 2017",
         "notice": "Research prototype for guideline retrieval. Not a medical device or triage tool.",
     }
+
+
+@app.get("/app", tags=["interface"], include_in_schema=False)
+def browser_app() -> FileResponse:
+    """Serve the browser-based consultation interface."""
+    if not INDEX_FILE.is_file():
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=503,
+            detail="The browser interface file is not installed.",
+        )
+    return FileResponse(INDEX_FILE, media_type="text/html")
 
 
 @app.get("/health", tags=["system"])
